@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Trash2, CheckCircle, XCircle, Plus } from 'lucide-react';
+import { Calendar, Trash2, CheckCircle, XCircle, Plus } from 'lucide-react';
 import { Schedule } from '@/lib/types';
 import { showSuccess } from '@/utils/toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 const Schedules = () => {
   const { schedules, setSchedules } = useStorage();
@@ -80,7 +81,7 @@ const Schedules = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {schedules.length > 0 ? schedules.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((s) => (
+        {schedules.length > 0 ? [...schedules].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((s) => (
           <Card key={s.id} className={cn(
             "border-l-4",
             s.status === 'Pendente' ? "border-l-amber-500" : 

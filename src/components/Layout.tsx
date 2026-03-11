@@ -76,7 +76,7 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
                 {item.badge && item.badge > 0 && (
                   <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">
                     {item.badge}
-                  </Badge>
+                  </span>
                 )}
               </Link>
             ))}
