@@ -2,12 +2,15 @@ import React from 'react';
 import Layout from '@/components/Layout';
 import { useStorage } from '@/hooks/use-storage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils-format';
-import { TrendingUp, AlertTriangle, CheckCircle2, DollarSign } from 'lucide-react';
+import { TrendingUp, AlertTriangle, CheckCircle2, DollarSign, Calendar, ArrowRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Link } from 'react-router-dom';
 
 const Index = () => {
-  const { budgets, vehicles } = useStorage();
+  const { budgets, vehicles, schedules } = useStorage();
 
   const totalRevenue = budgets
     .filter(b => b.status === 'Pago')
@@ -15,6 +18,7 @@ const Index = () => {
 
   const pendingBudgets = budgets.filter(b => ['Aberto', 'Em Negociação'].includes(b.status)).length;
   const overdueMaintenance = vehicles.filter(v => (v.lastOilChangeKm + v.oilIntervalKm) <= v.currentKm).length;
+  const pendingSchedules = schedules.filter(s => s.status === 'Pendente');
 
   const statusData = [
     { name: 'Aberto', value: budgets.filter(b => b.status === 'Aberto').length, color: '#3b82f6' },
@@ -29,6 +33,35 @@ const Index = () => {
         <h2 className="text-3xl font-bold text-slate-800">Dashboard</h2>
         <p className="text-slate-500">Bem-vindo, Dagoberto Cardoso Braga</p>
       </div>
+
+      {/* Nova Seção: Agendamentos Pendentes */}
+      {pendingSchedules.length > 0 && (
+        <Card className="mb-8 border-amber-200 bg-amber-50/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div className="flex items-center gap-2">
+              <Calendar className="text-amber-600" size={20} />
+              <CardTitle className="text-lg font-bold text-amber-900">Novas Solicitações de Agendamento</CardTitle>
+              <Badge className="bg-amber-500 hover:bg-amber-600">{pendingSchedules.length}</Badge>
+            </div>
+            <Button variant="ghost" size="sm" asChild className="text-amber-700 hover:text-amber-800 hover:bg-amber-100">
+              <Link to="/schedules">Ver todos <ArrowRight className="ml-1" size={16} /></Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pendingSchedules.slice(0, 3).map((s) => (
+                <div key={s.id} className="bg-white p-3 rounded-lg border border-amber-100 shadow-sm flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-slate-800 text-sm">{s.clientName}</p>
+                    <p className="text-xs text-slate-500">{s.vehiclePlate} • {new Date(s.date).toLocaleDateString()} às {s.time}</p>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] border-amber-200 text-amber-700">PENDENTE</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card className="border-l-4 border-l-blue-500">
