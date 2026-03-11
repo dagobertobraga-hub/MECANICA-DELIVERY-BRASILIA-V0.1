@@ -1,0 +1,307 @@
+import React, { useState } from 'react';
+import Layout from '@/components/Layout';
+import { useStorage } from '@/hooks/use-storage';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2 } from 'lucide-react';
+import { Budget, BudgetItem, BudgetStatus } from '@/lib/types';
+import { formatCurrency, toUpperCase } from '@/lib/utils-format';
+import { generateBudgetPDF } from '@/lib/pdf-generator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { showSuccess } from '@/utils/toast';
+
+const Budgets = () => {
+  const { budgets, setBudgets } = useStorage();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+
+  const [formData, setFormData] = useState<Partial<Budget>>({
+    clientName: '',
+    clientPhone: '',
+    vehiclePlate: '',
+    km: 0,
+    status: 'Rascunho',
+    items: []
+  });
+
+  const [newItem, setNewItem] = useState<Partial<BudgetItem>>({
+    description: '',
+    quantity: 1,
+    unitValue: 0,
+    type: 'Peça'
+  });
+
+  const handleSave = () => {
+    if (editingBudget) {
+      setBudgets(budgets.map(b => b.id === editingBudget.id ? { ...editingBudget, ...formData, updatedAt: new Date().toISOString() } as Budget : b));
+    } else {
+      const newBudget: Budget = {
+        id: Math.random().toString(36).substr(2, 9),
+        number: (budgets.length + 1).toString().padStart(4, '0'),
+        clientName: formData.clientName || '',
+        clientPhone: formData.clientPhone || '',
+        vehiclePlate: formData.vehiclePlate || '',
+        km: formData.km || 0,
+        status: formData.status as BudgetStatus,
+        items: formData.items || [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      setBudgets([newBudget, ...budgets]);
+    }
+    setIsModalOpen(false);
+    setEditingBudget(null);
+    setFormData({ items: [] });
+    showSuccess('Orçamento salvo com sucesso!');
+  };
+
+  const addItem = () => {
+    if (newItem.description && newItem.unitValue) {
+      setFormData({
+        ...formData,
+        items: [...(formData.items || []), { ...newItem, id: Math.random().toString(36).substr(2, 9) } as BudgetItem]
+      });
+      setNewItem({ description: '', quantity: 1, unitValue: 0, type: 'Peça' });
+    }
+  };
+
+  const removeItem = (id: string) => {
+    setFormData({
+      ...formData,
+      items: formData.items?.filter(i => i.id !== id)
+    });
+  };
+
+  const handleDownloadPDF = (budget: Budget) => {
+    const doc = generateBudgetPDF(budget);
+    doc.save(`orcamento_${budget.number}.pdf`);
+  };
+
+  const handleWhatsApp = (budget: Budget) => {
+    const phone = prompt('Digite o número do WhatsApp (com DDD):', budget.clientPhone);
+    if (phone) {
+      const total = budget.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0);
+      const message = `Olá! Segue o orçamento da Mecânica Delivery Brasília.\n\nOrçamento: ${budget.number}\nVeículo: ${budget.vehiclePlate.toUpperCase()}\nTotal: ${formatCurrency(total)}\nStatus: ${budget.status}\n\nPara ver os detalhes, entre em contato conosco.`;
+      window.open(`https://wa.me/55${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+    }
+  };
+
+  const filteredBudgets = budgets.filter(b => 
+    b.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    b.vehiclePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    b.number.includes(searchTerm)
+  );
+
+  const getStatusColor = (status: BudgetStatus) => {
+    const colors: Record<BudgetStatus, string> = {
+      'Rascunho': 'bg-slate-100 text-slate-600',
+      'Aberto': 'bg-blue-100 text-blue-600',
+      'Em Negociação': 'bg-amber-100 text-amber-600',
+      'Em Andamento': 'bg-indigo-100 text-indigo-600',
+      'Aprovado': 'bg-green-100 text-green-600',
+      'Concluído': 'bg-emerald-100 text-emerald-600',
+      'Pago': 'bg-purple-100 text-purple-600',
+      'Recusado': 'bg-red-100 text-red-600',
+    };
+    return colors[status];
+  };
+
+  return (
+    <Layout>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-slate-800">Orçamentos</h2>
+          <p className="text-slate-500">Gerencie orçamentos de peças e serviços</p>
+        </div>
+        <Dialog open={isModalOpen} onOpenChange={(open) => {
+          setIsModalOpen(open);
+          if (!open) {
+            setEditingBudget(null);
+            setFormData({ items: [] });
+          }
+        }}>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="mr-2" size={20} /> Novo Orçamento
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingBudget ? 'Editar Orçamento' : 'Novo Orçamento'}</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Nome do Cliente</label>
+                <Input 
+                  value={formData.clientName} 
+                  onChange={e => setFormData({...formData, clientName: toUpperCase(e.target.value)})} 
+                  placeholder="NOME COMPLETO"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Telefone</label>
+                <Input 
+                  value={formData.clientPhone} 
+                  onChange={e => setFormData({...formData, clientPhone: e.target.value})} 
+                  placeholder="(61) 99999-9999"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Placa do Veículo</label>
+                <Input 
+                  value={formData.vehiclePlate} 
+                  onChange={e => setFormData({...formData, vehiclePlate: toUpperCase(e.target.value)})} 
+                  placeholder="ABC1D23"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Quilometragem</label>
+                <Input 
+                  type="number" 
+                  value={formData.km} 
+                  onChange={e => setFormData({...formData, km: Number(e.target.value)})} 
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Status</label>
+                <Select value={formData.status} onValueChange={v => setFormData({...formData, status: v as BudgetStatus})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['Rascunho', 'Aberto', 'Em Negociação', 'Em Andamento', 'Aprovado', 'Concluído', 'Pago', 'Recusado'].map(s => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="mt-8 border-t pt-6">
+              <h3 className="font-bold mb-4">Itens do Orçamento</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
+                <Input 
+                  className="md:col-span-2"
+                  placeholder="DESCRIÇÃO DO ITEM" 
+                  value={newItem.description} 
+                  onChange={e => setNewItem({...newItem, description: toUpperCase(e.target.value)})}
+                />
+                <Input 
+                  type="number" 
+                  placeholder="QTD" 
+                  value={newItem.quantity} 
+                  onChange={e => setNewItem({...newItem, quantity: Number(e.target.value)})}
+                />
+                <Input 
+                  type="number" 
+                  placeholder="VALOR UNIT." 
+                  value={newItem.unitValue} 
+                  onChange={e => setNewItem({...newItem, unitValue: Number(e.target.value)})}
+                />
+                <Select value={newItem.type} onValueChange={v => setNewItem({...newItem, type: v as 'Peça' | 'Serviço'})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Peça">Peça</SelectItem>
+                    <SelectItem value="Serviço">Serviço</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={addItem} className="md:col-span-4 bg-slate-800">Adicionar Item</Button>
+              </div>
+
+              <div className="space-y-2">
+                {formData.items?.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border">
+                    <div className="flex-1">
+                      <p className="font-medium">{item.description}</p>
+                      <p className="text-xs text-slate-500">{item.type} | {item.quantity}x {formatCurrency(item.unitValue)}</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <p className="font-bold">{formatCurrency(item.quantity * item.unitValue)}</p>
+                      <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)} className="text-red-500">
+                        <Trash2 size={18} />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 text-right">
+                <p className="text-xl font-bold">Total: {formatCurrency(formData.items?.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0) || 0)}</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-8">
+              <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+              <Button onClick={handleSave} className="bg-blue-600">Salvar Orçamento</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+        <Input 
+          className="pl-10" 
+          placeholder="Buscar por cliente, placa ou número..." 
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4">
+        {filteredBudgets.map((budget) => (
+          <Card key={budget.id} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-400">#{budget.number}</span>
+                    <Badge className={getStatusColor(budget.status)}>{budget.status}</Badge>
+                  </div>
+                  <h3 className="text-lg font-bold">{budget.clientName}</h3>
+                  <p className="text-sm text-slate-500">{budget.vehiclePlate} • {budget.km} KM</p>
+                </div>
+                
+                <div className="flex flex-col items-end justify-between gap-2">
+                  <p className="text-xl font-bold text-blue-700">
+                    {formatCurrency(budget.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0))}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="icon" onClick={() => {
+                      setEditingBudget(budget);
+                      setFormData(budget);
+                      setIsModalOpen(true);
+                    }}>
+                      <Edit2 size={18} />
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={() => handleDownloadPDF(budget)}>
+                      <FileDown size={18} />
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={() => handleWhatsApp(budget)} className="text-green-600">
+                      <MessageSquare size={18} />
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={() => {
+                      if(confirm('Deseja excluir este orçamento?')) {
+                        setBudgets(budgets.filter(b => b.id !== budget.id));
+                      }
+                    }} className="text-red-500">
+                      <Trash2 size={18} />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </Layout>
+  );
+};
+
+export default Budgets;
