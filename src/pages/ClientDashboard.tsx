@@ -1,26 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useStorage } from '@/hooks/use-storage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { formatCurrency, calculateNextMaintenance } from '@/lib/utils-format';
-import { Wrench, Clock, CheckCircle2, AlertTriangle, Package, Settings } from 'lucide-react';
+import { Wrench, Clock, CheckCircle2, AlertTriangle, Package, Settings, CalendarPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { showSuccess } from '@/utils/toast';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const ClientDashboard = () => {
-  const { vehicles, budgets } = useStorage();
+  const { vehicles, budgets, schedules, setSchedules } = useStorage();
   const plate = localStorage.getItem('logged_client_plate');
   const vehicle = vehicles.find(v => v.plate === plate);
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('');
 
   if (!vehicle) return <div className="p-8 text-center">Veículo não encontrado.</div>;
 
-  // Filtra orçamentos deste veículo que já foram aprovados, concluídos ou pagos
   const detailedHistory = budgets
     .filter(b => b.vehiclePlate === plate && ['Aprovado', 'Concluído', 'Pago', 'Em Andamento'].includes(b.status))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -28,11 +35,59 @@ const ClientDashboard = () => {
   const remaining = calculateNextMaintenance(vehicle.currentKm, vehicle.lastOilChangeKm, vehicle.oilIntervalKm);
   const isOverdue = remaining === 0;
 
+  const handleRequestSchedule = () => {
+    if (scheduleDate && scheduleTime) {
+      const newRequest = {
+        id: Math.random().toString(36).substr(2, 9),
+        clientName: vehicle.clientName,
+        vehiclePlate: vehicle.plate,
+        date: scheduleDate,
+        time: scheduleTime,
+        status: 'Pendente' as const,
+        createdAt: new Date().toISOString()
+      };
+      setSchedules([newRequest, ...schedules]);
+      setIsModalOpen(false);
+      setScheduleDate('');
+      setScheduleTime('');
+      showSuccess('Solicitação enviada! Aguarde a confirmação.');
+    }
+  };
+
   return (
     <Layout isAdmin={false}>
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-slate-800">Olá, {vehicle.clientName}!</h2>
-        <p className="text-slate-500">Acompanhe a saúde e o histórico detalhado do seu {vehicle.model}</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-slate-800">Olá, {vehicle.clientName}!</h2>
+          <p className="text-slate-500">Acompanhe a saúde e o histórico detalhado do seu {vehicle.model}</p>
+        </div>
+        
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200">
+              <CalendarPlus className="mr-2" size={20} /> Solicitar Agendamento
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Solicitar Agendamento</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <p className="text-sm text-slate-500">Escolha a melhor data e horário para sua revisão. Nossa equipe entrará em contato para confirmar.</p>
+              <div className="space-y-2">
+                <label className="text-sm font-bold">Data Sugerida</label>
+                <Input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold">Horário Sugerido</label>
+                <Input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} />
+              </div>
+              <Button onClick={handleRequestSchedule} className="w-full bg-blue-600 h-12 font-bold">
+                ENVIAR SOLICITAÇÃO
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -103,7 +158,6 @@ const ClientDashboard = () => {
                     </AccordionTrigger>
                     <AccordionContent className="pb-4 pt-2">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-4">
-                        {/* Seção de Peças */}
                         <div>
                           <h4 className="text-xs font-black text-slate-400 uppercase mb-3 flex items-center gap-2">
                             <Package size={14} /> Peças Utilizadas
@@ -117,8 +171,6 @@ const ClientDashboard = () => {
                             )) : <p className="text-xs text-slate-400 italic">Nenhuma peça registrada.</p>}
                           </div>
                         </div>
-
-                        {/* Seção de Serviços */}
                         <div>
                           <h4 className="text-xs font-black text-slate-400 uppercase mb-3 flex items-center gap-2">
                             <Settings size={14} /> Mão de Obra / Serviços
@@ -131,14 +183,6 @@ const ClientDashboard = () => {
                               </div>
                             )) : <p className="text-xs text-slate-400 italic">Nenhum serviço registrado.</p>}
                           </div>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                        <span className="text-xs text-slate-400 italic">Orçamento gerado em {new Date(budget.createdAt).toLocaleString('pt-BR')}</span>
-                        <div className="text-right">
-                          <p className="text-xs text-slate-500">Total Geral</p>
-                          <p className="text-lg font-black text-slate-800">{formatCurrency(total)}</p>
                         </div>
                       </div>
                     </AccordionContent>

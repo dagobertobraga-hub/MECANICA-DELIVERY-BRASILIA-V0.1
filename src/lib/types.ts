@@ -48,3 +48,13 @@ export interface Admin {
   name: string;
   email: string;
 }
+
+export interface Schedule {
+  id: string;
+  clientName: string;
+  vehiclePlate: string;
+  date: string;
+  time: string;
+  status: 'Pendente' | 'Confirmado' | 'Cancelado';
+  createdAt: string;
+}

@@ -1,18 +1,21 @@
 import React, { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, Car, Users, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, FileText, Car, Users, LogOut, Menu, X, Calendar } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
+import { useStorage } from '@/hooks/use-storage';
 
 const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode, isAdmin?: boolean }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const { schedules } = useStorage();
   
   const userRole = localStorage.getItem('user_role');
   const isAdmin = userRole === 'admin';
+  
+  const pendingSchedules = schedules.filter(s => s.status === 'Pendente').length;
 
-  // Proteção de rota simples
   useEffect(() => {
     if (!userRole && location.pathname !== '/login') {
       navigate('/login');
@@ -32,6 +35,7 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
     { label: 'Orçamentos', path: '/budgets', icon: FileText },
     { label: 'Veículos', path: '/vehicles', icon: Car },
+    { label: 'Agendamentos', path: '/schedules', icon: Calendar, badge: pendingSchedules },
     { label: 'Admins', path: '/admins', icon: Users },
   ] : [
     { label: 'Meu Veículo', path: '/client-dashboard', icon: Car },
@@ -39,7 +43,6 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
-      {/* Mobile Header */}
       <div className="md:hidden bg-white border-b p-4 flex justify-between items-center sticky top-0 z-50">
         <h1 className="font-black text-blue-600 tracking-tighter">MECÂNICA DELIVERY</h1>
         <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
@@ -47,7 +50,6 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
         </Button>
       </div>
 
-      {/* Sidebar */}
       <aside className={cn(
         "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0",
         isMenuOpen ? "translate-x-0" : "-translate-x-full"
@@ -61,14 +63,21 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
                 to={item.path}
                 onClick={() => setIsMenuOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-bold",
+                  "flex items-center justify-between px-4 py-3 rounded-lg transition-colors font-bold",
                   location.pathname === item.path 
                     ? "bg-blue-600 text-white shadow-lg shadow-blue-200" 
                     : "text-slate-600 hover:bg-slate-100"
                 )}
               >
-                <item.icon size={20} />
-                {item.label}
+                <div className="flex items-center gap-3">
+                  <item.icon size={20} />
+                  {item.label}
+                </div>
+                {item.badge && item.badge > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">
+                    {item.badge}
+                  </Badge>
+                )}
               </Link>
             ))}
           </nav>
@@ -84,7 +93,6 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 p-4 md:p-8 overflow-auto">
         <div className="max-w-6xl mx-auto">
           {children}

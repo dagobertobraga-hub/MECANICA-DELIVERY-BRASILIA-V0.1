@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Budgets from "./pages/Budgets";
 import Vehicles from "./pages/Vehicles";
 import Admins from "./pages/Admins";
+import Schedules from "./pages/Schedules";
 import ClientLogin from "./pages/ClientLogin";
 import ClientDashboard from "./pages/ClientDashboard";
 import NotFound from "./pages/NotFound";
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/budgets" element={<Budgets />} />
           <Route path="/vehicles" element={<Vehicles />} />
           <Route path="/admins" element={<Admins />} />
+          <Route path="/schedules" element={<Schedules />} />
           <Route path="/login" element={<ClientLogin />} />
           <Route path="/client-dashboard" element={<ClientDashboard />} />
           <Route path="*" element={<NotFound />} />

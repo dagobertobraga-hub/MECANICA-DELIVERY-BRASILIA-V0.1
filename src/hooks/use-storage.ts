@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Budget, Vehicle, Admin } from '../lib/types';
+import { Budget, Vehicle, Admin, Schedule } from '../lib/types';
 
 const MOCK_VEHICLES: Vehicle[] = [
   { id: 'v1', plate: 'ABC1D23', model: 'TOYOTA COROLLA 2022', clientName: 'JOÃO SILVA', clientPhone: '61999999999', password: '1D23', currentKm: 52000, oilIntervalKm: 10000, lastOilChangeKm: 45000, maintenances: [] },
@@ -34,56 +34,6 @@ const MOCK_BUDGETS: Budget[] = [
     id: 'b2', number: '0002', clientName: 'MARIA OLIVEIRA', clientPhone: '61988888888', vehiclePlate: 'XYZ9A88', km: 65000, status: 'Aberto',
     items: [{ id: 'i4', description: 'PASTILHA DE FREIO', quantity: 1, unitValue: 220, type: 'Peça' }, { id: 'i6', description: 'MÃO DE OBRA', quantity: 1, unitValue: 150, type: 'Serviço' }],
     createdAt: '2024-02-15T09:00:00Z', updatedAt: '2024-02-15T09:00:00Z'
-  },
-  {
-    id: 'b3', number: '0003', clientName: 'CARLOS SOUZA', clientPhone: '61977777777', vehiclePlate: 'KJH4F22', km: 88000, status: 'Aprovado',
-    items: [{ id: 'i7', description: 'FILTRO DE AR', quantity: 1, unitValue: 45, type: 'Peça' }, { id: 'i8', description: 'LIMPEZA DE BICO', quantity: 1, unitValue: 200, type: 'Serviço' }],
-    createdAt: '2024-02-20T11:00:00Z', updatedAt: '2024-02-21T10:00:00Z'
-  },
-  {
-    id: 'b4', number: '0004', clientName: 'ANA COSTA', clientPhone: '61966666666', vehiclePlate: 'BRA2E19', km: 42000, status: 'Em Negociação',
-    items: [{ id: 'i9', description: 'AMORTECEDOR DIANTEIRO', quantity: 2, unitValue: 450, type: 'Peça' }, { id: 'i10', description: 'MÃO DE OBRA SUSPENSÃO', quantity: 1, unitValue: 300, type: 'Serviço' }],
-    createdAt: '2024-02-22T14:00:00Z', updatedAt: '2024-02-22T14:00:00Z'
-  },
-  {
-    id: 'b5', number: '0005', clientName: 'ROBERTO LIMA', clientPhone: '61955555555', vehiclePlate: 'MER3C21', km: 35000, status: 'Pago',
-    items: [{ id: 'i11', description: 'ÓLEO MOTUL', quantity: 6, unitValue: 95, type: 'Peça' }, { id: 'i12', description: 'FILTRO MANN', quantity: 1, unitValue: 120, type: 'Peça' }],
-    createdAt: '2024-02-10T08:00:00Z', updatedAt: '2024-02-10T10:00:00Z'
-  },
-  {
-    id: 'b6', number: '0006', clientName: 'FERNANDA DIAS', clientPhone: '61944444444', vehiclePlate: 'JEEP4X4', km: 15000, status: 'Concluído',
-    items: [{ id: 'i13', description: 'ALINHAMENTO E BALANCEAMENTO', quantity: 1, unitValue: 180, type: 'Serviço' }],
-    createdAt: '2024-02-24T09:00:00Z', updatedAt: '2024-02-25T16:00:00Z'
-  },
-  {
-    id: 'b7', number: '0007', clientName: 'PAULO REIS', clientPhone: '61933333333', vehiclePlate: 'HYU5N11', km: 95000, status: 'Recusado',
-    items: [{ id: 'i14', description: 'KIT EMBREAGEM', quantity: 1, unitValue: 850, type: 'Peça' }, { id: 'i15', description: 'MÃO DE OBRA EMBREAGEM', quantity: 1, unitValue: 500, type: 'Serviço' }],
-    createdAt: '2024-02-18T10:00:00Z', updatedAt: '2024-02-18T10:00:00Z'
-  },
-  {
-    id: 'b8', number: '0008', clientName: 'JULIANA MELLO', clientPhone: '61922222222', vehiclePlate: 'CHV6R22', km: 28000, status: 'Rascunho',
-    items: [{ id: 'i16', description: 'VELAS DE IGNIÇÃO', quantity: 4, unitValue: 45, type: 'Peça' }],
-    createdAt: '2024-02-26T15:00:00Z', updatedAt: '2024-02-26T15:00:00Z'
-  },
-  {
-    id: 'b9', number: '0009', clientName: 'MARCOS ANTÔNIO', clientPhone: '61911111111', vehiclePlate: 'FOR7D33', km: 120000, status: 'Em Andamento',
-    items: [{ id: 'i17', description: 'BOMBA D ÁGUA', quantity: 1, unitValue: 380, type: 'Peça' }, { id: 'i18', description: 'ADITIVO RADIADOR', quantity: 3, unitValue: 35, type: 'Peça' }],
-    createdAt: '2024-02-25T11:00:00Z', updatedAt: '2024-02-25T11:00:00Z'
-  },
-  {
-    id: 'b10', number: '0010', clientName: 'BEATRIZ LOPES', clientPhone: '61900000000', vehiclePlate: 'REN8O44', km: 45000, status: 'Pago',
-    items: [{ id: 'i19', description: 'PNEU 165/70 R14', quantity: 2, unitValue: 320, type: 'Peça' }],
-    createdAt: '2024-02-25T13:00:00Z', updatedAt: '2024-02-25T15:00:00Z'
-  },
-  {
-    id: 'b11', number: '0011', clientName: 'GUSTAVO HENRIQUE', clientPhone: '61987654321', vehiclePlate: 'BMW9I55', km: 12000, status: 'Aberto',
-    items: [{ id: 'i20', description: 'REVISÃO SISTEMA ELÉTRICO', quantity: 1, unitValue: 450, type: 'Serviço' }],
-    createdAt: '2024-02-26T08:00:00Z', updatedAt: '2024-02-26T08:00:00Z'
-  },
-  {
-    id: 'b12', number: '0012', clientName: 'LUCIANA GOMES', clientPhone: '61912345678', vehiclePlate: 'AUD1A33', km: 58000, status: 'Aprovado',
-    items: [{ id: 'i21', description: 'TURBINA REVISÃO', quantity: 1, unitValue: 1800, type: 'Serviço' }],
-    createdAt: '2024-02-26T10:00:00Z', updatedAt: '2024-02-26T10:00:00Z'
   }
 ];
 
@@ -103,6 +53,11 @@ export function useStorage() {
     return saved ? JSON.parse(saved) : [{ id: '1', name: 'DAGOBERTO', email: 'dagoberto.braga@gmail.com' }];
   });
 
+  const [schedules, setSchedules] = useState<Schedule[]>(() => {
+    const saved = localStorage.getItem('mecanica_schedules');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   useEffect(() => {
     localStorage.setItem('mecanica_budgets', JSON.stringify(budgets));
   }, [budgets]);
@@ -115,5 +70,9 @@ export function useStorage() {
     localStorage.setItem('mecanica_admins', JSON.stringify(admins));
   }, [admins]);
 
-  return { budgets, setBudgets, vehicles, setVehicles, admins, setAdmins };
+  useEffect(() => {
+    localStorage.setItem('mecanica_schedules', JSON.stringify(schedules));
+  }, [schedules]);
+
+  return { budgets, setBudgets, vehicles, setVehicles, admins, setAdmins, schedules, setSchedules };
 }
