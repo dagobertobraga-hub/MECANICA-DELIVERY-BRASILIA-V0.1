@@ -1,12 +1,32 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, FileText, Car, Users, LogOut, Menu, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 
-const Layout = ({ children, isAdmin = true }: { children: React.ReactNode, isAdmin?: boolean }) => {
+const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode, isAdmin?: boolean }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  
+  const userRole = localStorage.getItem('user_role');
+  const isAdmin = userRole === 'admin';
+
+  // Proteção de rota simples
+  useEffect(() => {
+    if (!userRole && location.pathname !== '/login') {
+      navigate('/login');
+    }
+    if (userRole === 'client' && propIsAdmin === true) {
+      navigate('/client-dashboard');
+    }
+  }, [userRole, location.pathname, navigate, propIsAdmin]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user_role');
+    localStorage.removeItem('logged_client_plate');
+    navigate('/login');
+  };
 
   const navItems = isAdmin ? [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -14,14 +34,14 @@ const Layout = ({ children, isAdmin = true }: { children: React.ReactNode, isAdm
     { label: 'Veículos', path: '/vehicles', icon: Car },
     { label: 'Admins', path: '/admins', icon: Users },
   ] : [
-    { label: 'Meus Veículos', path: '/client-dashboard', icon: Car },
+    { label: 'Meu Veículo', path: '/client-dashboard', icon: Car },
   ];
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
       {/* Mobile Header */}
-      <div className="md:hidden bg-white border-b p-4 flex justify-between items-center">
-        <h1 className="font-bold text-blue-600">MECÂNICA DELIVERY</h1>
+      <div className="md:hidden bg-white border-b p-4 flex justify-between items-center sticky top-0 z-50">
+        <h1 className="font-black text-blue-600 tracking-tighter">MECÂNICA DELIVERY</h1>
         <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
           {isMenuOpen ? <X /> : <Menu />}
         </Button>
@@ -33,7 +53,7 @@ const Layout = ({ children, isAdmin = true }: { children: React.ReactNode, isAdm
         isMenuOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="p-6">
-          <h1 className="text-xl font-bold text-blue-700 mb-8 hidden md:block">MECÂNICA DELIVERY</h1>
+          <h1 className="text-xl font-black text-blue-700 mb-8 hidden md:block tracking-tighter">MECÂNICA DELIVERY</h1>
           <nav className="space-y-2">
             {navItems.map((item) => (
               <Link
@@ -41,9 +61,9 @@ const Layout = ({ children, isAdmin = true }: { children: React.ReactNode, isAdm
                 to={item.path}
                 onClick={() => setIsMenuOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-bold",
                   location.pathname === item.path 
-                    ? "bg-blue-50 text-blue-700 font-medium" 
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-200" 
                     : "text-slate-600 hover:bg-slate-100"
                 )}
               >
@@ -53,11 +73,14 @@ const Layout = ({ children, isAdmin = true }: { children: React.ReactNode, isAdm
             ))}
           </nav>
         </div>
-        <div className="absolute bottom-0 w-full p-6 border-t">
-          <Link to="/login" className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+        <div className="absolute bottom-0 w-full p-6 border-t bg-white">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-3 w-full px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-bold"
+          >
             <LogOut size={20} />
-            Sair
-          </Link>
+            Sair do Sistema
+          </button>
         </div>
       </aside>
 
