@@ -41,16 +41,14 @@ const ClientDashboard = () => {
   const handleSaveSchedule = () => {
     if (scheduleDate && scheduleTime) {
       if (editingSchedule) {
-        // Remarcar
         setSchedules(schedules.map(s => s.id === editingSchedule.id ? {
           ...s,
           date: scheduleDate,
           time: scheduleTime,
-          status: 'Pendente' // Volta para pendente ao remarcar
+          status: 'Pendente'
         } : s));
         showSuccess('Agendamento remarcado! Aguarde nova confirmação.');
       } else {
-        // Novo
         const newRequest: Schedule = {
           id: Math.random().toString(36).substr(2, 9),
           clientName: vehicle.clientName,
@@ -132,6 +130,49 @@ const ClientDashboard = () => {
         </Dialog>
       </div>
 
+      {/* Seção de Agendamentos no Topo */}
+      <Card className="mb-8 border-blue-100 bg-blue-50/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-blue-800">
+            <Calendar className="text-blue-600" size={20} /> Meus Agendamentos
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {clientSchedules.length > 0 ? clientSchedules.map((s) => (
+              <div key={s.id} className="flex items-center justify-between p-4 bg-white rounded-xl border shadow-sm">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant={s.status === 'Pendente' ? 'secondary' : 'outline'} className={cn(
+                      s.status === 'Confirmado' && "bg-green-50 text-green-700 border-green-200",
+                      s.status === 'Cancelado' && "bg-red-50 text-red-700 border-red-200"
+                    )}>
+                      {s.status}
+                    </Badge>
+                    <span className="text-sm font-bold text-slate-700">
+                      {new Date(s.date).toLocaleDateString('pt-BR')} às {s.time}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 uppercase font-bold">Solicitado em {new Date(s.createdAt).toLocaleDateString()}</p>
+                </div>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="icon" className="text-blue-600 h-8 w-8" onClick={() => openEditModal(s)}>
+                    <Edit2 size={16} />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="text-red-500 h-8 w-8" onClick={() => handleDeleteSchedule(s.id)}>
+                    <Trash2 size={16} />
+                  </Button>
+                </div>
+              </div>
+            )) : (
+              <div className="col-span-full text-center py-6 text-slate-400 bg-white/50 rounded-lg border border-dashed">
+                <p className="text-sm italic">Você não possui agendamentos ativos no momento.</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card className={cn("border-l-4", isOverdue ? "border-l-red-500" : "border-l-green-500")}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -167,123 +208,79 @@ const ClientDashboard = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="text-blue-600" size={20} /> Meus Agendamentos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {clientSchedules.length > 0 ? clientSchedules.map((s) => (
-                <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge variant={s.status === 'Pendente' ? 'secondary' : 'outline'} className={cn(
-                        s.status === 'Confirmado' && "bg-green-50 text-green-700 border-green-200",
-                        s.status === 'Cancelado' && "bg-red-50 text-red-700 border-red-200"
-                      )}>
-                        {s.status}
-                      </Badge>
-                      <span className="text-sm font-bold text-slate-700">
-                        {new Date(s.date).toLocaleDateString('pt-BR')} às {s.time}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500">Solicitado em {new Date(s.createdAt).toLocaleDateString()}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" className="text-blue-600" onClick={() => openEditModal(s)}>
-                      <Edit2 size={18} />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="text-red-500" onClick={() => handleDeleteSchedule(s.id)}>
-                      <Trash2 size={18} />
-                    </Button>
-                  </div>
-                </div>
-              )) : (
-                <div className="text-center py-8 text-slate-400">
-                  <p className="text-sm italic">Você não possui agendamentos ativos.</p>
-                </div>
-              )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Histórico Detalhado de Serviços</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {detailedHistory.length > 0 ? (
+            <Accordion type="single" collapsible className="w-full space-y-4">
+              {detailedHistory.map((budget) => {
+                const total = budget.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0);
+                const parts = budget.items.filter(i => i.type === 'Peça');
+                const services = budget.items.filter(i => i.type === 'Serviço');
+
+                return (
+                  <AccordionItem key={budget.id} value={budget.id} className="border rounded-lg px-4 bg-slate-50/50">
+                    <AccordionTrigger className="hover:no-underline py-4">
+                      <div className="flex flex-1 items-center justify-between text-left pr-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className="bg-white">{budget.status}</Badge>
+                            <span className="font-bold text-slate-700">OS #{budget.number}</span>
+                          </div>
+                          <p className="text-sm text-slate-500">
+                            {new Date(budget.createdAt).toLocaleDateString('pt-BR')} • {budget.km.toLocaleString()} KM
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-blue-700">{formatCurrency(total)}</p>
+                          <p className="text-[10px] text-slate-400 uppercase font-bold">Clique para detalhes</p>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-4 pt-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-4">
+                        <div>
+                          <h4 className="text-xs font-black text-slate-400 uppercase mb-3 flex items-center gap-2">
+                            <Package size={14} /> Peças Utilizadas
+                          </h4>
+                          <div className="space-y-2">
+                            {parts.length > 0 ? parts.map(item => (
+                              <div key={item.id} className="flex justify-between text-sm p-2 bg-white rounded border border-slate-100">
+                                <span>{item.quantity}x {item.description}</span>
+                                <span className="font-medium">{formatCurrency(item.quantity * item.unitValue)}</span>
+                              </div>
+                            )) : <p className="text-xs text-slate-400 italic">Nenhuma peça registrada.</p>}
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-slate-400 uppercase mb-3 flex items-center gap-2">
+                            <Settings size={14} /> Mão de Obra / Serviços
+                          </h4>
+                          <div className="space-y-2">
+                            {services.length > 0 ? services.map(item => (
+                              <div key={item.id} className="flex justify-between text-sm p-2 bg-white rounded border border-slate-100">
+                                <span>{item.description}</span>
+                                <span className="font-medium">{formatCurrency(item.quantity * item.unitValue)}</span>
+                              </div>
+                            )) : <p className="text-xs text-slate-400 italic">Nenhum serviço registrado.</p>}
+                          </div>
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          ) : (
+            <div className="text-center py-12 text-slate-400">
+              <Wrench className="mx-auto mb-2 opacity-20" size={48} />
+              <p>Nenhum histórico detalhado encontrado para este veículo.</p>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Histórico Detalhado de Serviços</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {detailedHistory.length > 0 ? (
-              <Accordion type="single" collapsible className="w-full space-y-4">
-                {detailedHistory.map((budget) => {
-                  const total = budget.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0);
-                  const parts = budget.items.filter(i => i.type === 'Peça');
-                  const services = budget.items.filter(i => i.type === 'Serviço');
-
-                  return (
-                    <AccordionItem key={budget.id} value={budget.id} className="border rounded-lg px-4 bg-slate-50/50">
-                      <AccordionTrigger className="hover:no-underline py-4">
-                        <div className="flex flex-1 items-center justify-between text-left pr-4">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <Badge variant="outline" className="bg-white">{budget.status}</Badge>
-                              <span className="font-bold text-slate-700">OS #{budget.number}</span>
-                            </div>
-                            <p className="text-sm text-slate-500">
-                              {new Date(budget.createdAt).toLocaleDateString('pt-BR')} • {budget.km.toLocaleString()} KM
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-blue-700">{formatCurrency(total)}</p>
-                            <p className="text-[10px] text-slate-400 uppercase font-bold">Clique para detalhes</p>
-                          </div>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="pb-4 pt-2">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-4">
-                          <div>
-                            <h4 className="text-xs font-black text-slate-400 uppercase mb-3 flex items-center gap-2">
-                              <Package size={14} /> Peças Utilizadas
-                            </h4>
-                            <div className="space-y-2">
-                              {parts.length > 0 ? parts.map(item => (
-                                <div key={item.id} className="flex justify-between text-sm p-2 bg-white rounded border border-slate-100">
-                                  <span>{item.quantity}x {item.description}</span>
-                                  <span className="font-medium">{formatCurrency(item.quantity * item.unitValue)}</span>
-                                </div>
-                              )) : <p className="text-xs text-slate-400 italic">Nenhuma peça registrada.</p>}
-                            </div>
-                          </div>
-                          <div>
-                            <h4 className="text-xs font-black text-slate-400 uppercase mb-3 flex items-center gap-2">
-                              <Settings size={14} /> Mão de Obra / Serviços
-                            </h4>
-                            <div className="space-y-2">
-                              {services.length > 0 ? services.map(item => (
-                                <div key={item.id} className="flex justify-between text-sm p-2 bg-white rounded border border-slate-100">
-                                  <span>{item.description}</span>
-                                  <span className="font-medium">{formatCurrency(item.quantity * item.unitValue)}</span>
-                                </div>
-                              )) : <p className="text-xs text-slate-400 italic">Nenhum serviço registrado.</p>}
-                            </div>
-                          </div>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  );
-                })}
-              </Accordion>
-            ) : (
-              <div className="text-center py-12 text-slate-400">
-                <Wrench className="mx-auto mb-2 opacity-20" size={48} />
-                <p>Nenhum histórico detalhado encontrado para este veículo.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </Layout>
   );
 };
