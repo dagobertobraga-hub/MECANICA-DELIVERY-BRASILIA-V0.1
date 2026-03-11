@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { showSuccess } from '@/utils/toast';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { cn } from '@/lib/utils';
 
 const Vehicles = () => {
   const { vehicles, setVehicles } = useStorage();
@@ -275,6 +276,7 @@ const Vehicles = () => {
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium">Tipo de Serviço</label>
+              <span className="text-xs text-slate-400 block mb-1">Selecione o tipo de manutenção realizada</span>
               <Select value={maintenanceForm.type} onValueChange={v => setMaintenanceForm({...maintenanceForm, type: v as any})}>
                 <SelectTrigger>
                   <SelectValue />

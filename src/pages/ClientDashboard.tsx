@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, calculateNextMaintenance } from '@/lib/utils-format';
 import { Wrench, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const ClientDashboard = () => {
   const { vehicles } = useStorage();
