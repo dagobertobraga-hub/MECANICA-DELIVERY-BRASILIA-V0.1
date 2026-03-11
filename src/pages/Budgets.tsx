@@ -66,6 +66,7 @@ const Budgets = () => {
       clientName: data.clientName || formData.clientName,
       vehiclePlate: data.vehiclePlate || formData.vehiclePlate,
       km: data.km || formData.km,
+      items: data.items && data.items.length > 0 ? data.items : formData.items
     });
     setIsModalOpen(true);
   };
