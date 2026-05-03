@@ -21,6 +21,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 const Reports = () => {
   const { budgets, setBudgets, vehicles, setVehicles, schedules, setSchedules, professionals } = useStorage();
   const navigate = useNavigate();
+  const OFFICE_PHONE = "5561991386470";
 
   const [filterName, setFilterName] = useState('');
   const [filterPlate, setFilterPlate] = useState('');
@@ -65,8 +66,8 @@ const Reports = () => {
     doc.save(`orcamento_${budget.number}.pdf`);
   };
 
-  const handleWhatsApp = (phone: string, message: string) => {
-    window.open(`https://wa.me/55${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+  const handleWhatsAppOffice = (message: string) => {
+    window.open(`https://wa.me/${OFFICE_PHONE}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   return (
@@ -217,9 +218,9 @@ const Reports = () => {
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={() => handleWhatsApp(b.clientPhone, `Olá ${b.clientName}! Segue seu orçamento #${b.number}.`)} className="text-green-600"><MessageSquare size={16} /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleWhatsAppOffice(`Olá! Segue informações do orçamento #${b.number} do cliente ${b.clientName} (${b.vehiclePlate}).`)} className="text-green-600"><MessageSquare size={16} /></Button>
                             </TooltipTrigger>
-                            <TooltipContent>Enviar WhatsApp</TooltipContent>
+                            <TooltipContent>Enviar para WhatsApp (Oficina)</TooltipContent>
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -261,9 +262,9 @@ const Reports = () => {
                         <div className="flex justify-center gap-1">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={() => handleWhatsApp(v.clientPhone, `Olá ${v.clientName}! Como está seu ${v.model}?`)} className="text-green-600"><MessageSquare size={16} /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleWhatsAppOffice(`Olá! Gostaria de tratar sobre o veículo ${v.model} (${v.plate}) do cliente ${v.clientName}.`)} className="text-green-600"><MessageSquare size={16} /></Button>
                             </TooltipTrigger>
-                            <TooltipContent>Enviar WhatsApp</TooltipContent>
+                            <TooltipContent>Enviar para WhatsApp (Oficina)</TooltipContent>
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>

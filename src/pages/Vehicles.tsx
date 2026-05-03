@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { showSuccess } from '@/utils/toast';
 import { REVISION_PLANS, getNextRevision, calculateUsagePrediction } from '@/lib/maintenance-logic';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Vehicles = () => {
   const { vehicles, setVehicles } = useStorage();
@@ -20,6 +21,7 @@ const Vehicles = () => {
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const OFFICE_PHONE = "5561991386470";
 
   const [vehicleForm, setVehicleForm] = useState<Partial<Vehicle>>({
     plate: '', model: '', clientName: '', clientPhone: '', currentKm: 0, oilIntervalKm: 10000, avgKmMonth: 1000
@@ -29,7 +31,6 @@ const Vehicles = () => {
     description: '', km: 0, value: 0, type: 'Outros', date: new Date().toISOString().split('T')[0]
   });
 
-  // Extrair lista única de clientes para o seletor
   const uniqueClients = Array.from(new Set(vehicles.map(v => v.clientName))).sort();
 
   const handleSaveVehicle = () => {
@@ -195,18 +196,35 @@ const Vehicles = () => {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm" onClick={() => { setSelectedVehicle(vehicle); setIsMaintenanceModalOpen(true); }}>
-                        <Wrench className="mr-2" size={16} /> Registrar Manutenção
-                      </Button>
-                      <Button variant="outline" size="sm" className="text-green-600 border-green-200" onClick={() => {
-                        const msg = `Olá ${vehicle.clientName}! Notamos que seu ${vehicle.model} está com ${vehicle.currentKm} KM. Sugerimos a ${nextRev.name} para daqui a ${prediction.remainingKm} KM (aprox. ${prediction.estimatedDate.toLocaleDateString()}). Deseja agendar?`;
-                        window.open(`https://wa.me/55${vehicle.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
-                      }}>
-                        <MessageSquare className="mr-2" size={16} /> Sugerir Revisão
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-red-500" onClick={() => { if(confirm('Excluir veículo?')) setVehicles(vehicles.filter(v => v.id !== vehicle.id)); }}>
-                        <Trash2 size={16} />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" onClick={() => { setSelectedVehicle(vehicle); setIsMaintenanceModalOpen(true); }}>
+                            <Wrench className="mr-2" size={16} /> Registrar Manutenção
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Adicionar histórico de serviço</TooltipContent>
+                      </Tooltip>
+                      
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" className="text-green-600 border-green-200" onClick={() => {
+                            const msg = `Olá! Gostaria de tratar sobre a revisão do veículo ${vehicle.model} (${vehicle.plate}) do cliente ${vehicle.clientName}. KM Atual: ${vehicle.currentKm}.`;
+                            window.open(`https://wa.me/${OFFICE_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
+                          }}>
+                            <MessageSquare className="mr-2" size={16} /> Enviar para WhatsApp (Oficina)
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Enviar dados do veículo para a oficina</TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="sm" className="text-red-500" onClick={() => { if(confirm('Excluir veículo?')) setVehicles(vehicles.filter(v => v.id !== vehicle.id)); }}>
+                            <Trash2 size={16} />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Excluir veículo</TooltipContent>
+                      </Tooltip>
                     </div>
                   </div>
                 </div>

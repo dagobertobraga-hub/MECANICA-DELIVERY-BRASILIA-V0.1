@@ -20,6 +20,7 @@ const Budgets = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+  const OFFICE_PHONE = "5561991386470";
 
   const [formData, setFormData] = useState<Partial<Budget>>({
     clientName: '', clientPhone: '', vehiclePlate: '', km: 0, status: 'Aberto', items: [], professionalId: ''
@@ -102,10 +103,10 @@ const Budgets = () => {
     doc.save(`orcamento_${budget.number}.pdf`);
   };
 
-  const handleWhatsApp = (budget: Budget) => {
+  const handleWhatsAppOffice = (budget: Budget) => {
     const total = budget.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0);
     const message = `Olá! Segue o orçamento #${budget.number} da Mecânica Delivery Brasília.\nVeículo: ${budget.vehiclePlate.toUpperCase()}\nTotal: ${formatCurrency(total)}`;
-    window.open(`https://wa.me/55${budget.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://wa.me/${OFFICE_PHONE}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const filteredBudgets = budgets.filter(b => b.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || b.vehiclePlate.toLowerCase().includes(searchTerm.toLowerCase()) || b.number.includes(searchTerm));
@@ -195,7 +196,7 @@ const Budgets = () => {
                   <div className="flex gap-2">
                     <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={() => { setEditingBudget(budget); setFormData(budget); setIsModalOpen(true); }}><Edit2 size={18} /></Button></TooltipTrigger><TooltipContent>Editar</TooltipContent></Tooltip>
                     <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={() => handleDownloadPDF(budget)}><FileDown size={18} /></Button></TooltipTrigger><TooltipContent>Baixar PDF</TooltipContent></Tooltip>
-                    <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={() => handleWhatsApp(budget)} className="text-green-600"><MessageSquare size={18} /></Button></TooltipTrigger><TooltipContent>WhatsApp</TooltipContent></Tooltip>
+                    <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={() => handleWhatsAppOffice(budget)} className="text-green-600"><MessageSquare size={18} /></Button></TooltipTrigger><TooltipContent>Enviar para WhatsApp (Oficina)</TooltipContent></Tooltip>
                     <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={() => { if(confirm('Excluir?')) setBudgets(budgets.filter(b => b.id !== budget.id)); }} className="text-red-500"><Trash2 size={18} /></Button></TooltipTrigger><TooltipContent>Excluir</TooltipContent></Tooltip>
                   </div>
                 </div>
