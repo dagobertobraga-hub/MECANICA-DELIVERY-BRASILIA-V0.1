@@ -25,7 +25,7 @@ const Budgets = () => {
     clientPhone: '',
     vehiclePlate: '',
     km: 0,
-    status: 'Rascunho',
+    status: 'Aberto',
     items: [],
     professionalId: ''
   });
@@ -82,7 +82,7 @@ const Budgets = () => {
     }
     setIsModalOpen(false);
     setEditingBudget(null);
-    setFormData({ items: [] });
+    setFormData({ status: 'Aberto', items: [] });
     showSuccess('Orçamento salvo com sucesso!');
   };
 
@@ -169,7 +169,7 @@ const Budgets = () => {
           <PDFImportDialog onImport={handleImportPDF} />
           <Dialog open={isModalOpen} onOpenChange={(open) => {
             setIsModalOpen(open);
-            if (!open) { setEditingBudget(null); setFormData({ items: [] }); }
+            if (!open) { setEditingBudget(null); setFormData({ status: 'Aberto', items: [] }); }
           }}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700">
