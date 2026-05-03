@@ -7,13 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toUpperCase } from '@/lib/utils-format';
 import { showError, showSuccess } from '@/utils/toast';
-import { ShieldCheck, UserCircle } from 'lucide-react';
+import { ShieldCheck, UserCircle, Eye, EyeOff } from 'lucide-react';
 
 const ClientLogin = () => {
   const [plate, setPlate] = useState('');
   const [password, setPassword] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPass, setAdminPass] = useState('');
+  
+  const [showClientPass, setShowClientPass] = useState(false);
+  const [showAdminPass, setShowAdminPass] = useState(false);
   
   const { vehicles, admins } = useStorage();
   const navigate = useNavigate();
@@ -79,13 +82,23 @@ const ClientLogin = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700">SENHA (4 ÚLTIMOS DÍGITOS DA PLACA)</label>
-                  <Input 
-                    type="password" 
-                    placeholder="••••" 
-                    value={password} 
-                    onChange={e => setPassword(e.target.value)} 
-                    required
-                  />
+                  <div className="relative">
+                    <Input 
+                      type={showClientPass ? "text" : "password"} 
+                      placeholder="••••" 
+                      value={password} 
+                      onChange={e => setPassword(e.target.value)} 
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowClientPass(!showClientPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showClientPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
                 <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-lg font-bold">
                   CONSULTAR MEU VEÍCULO
@@ -106,13 +119,23 @@ const ClientLogin = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700">SENHA</label>
-                  <Input 
-                    type="password" 
-                    placeholder="••••" 
-                    value={adminPass} 
-                    onChange={e => setAdminPass(e.target.value)} 
-                    required
-                  />
+                  <div className="relative">
+                    <Input 
+                      type={showAdminPass ? "text" : "password"} 
+                      placeholder="••••" 
+                      value={adminPass} 
+                      onChange={e => setAdminPass(e.target.value)} 
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminPass(!showAdminPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showAdminPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
                 <Button type="submit" className="w-full bg-slate-800 hover:bg-slate-900 h-12 text-lg font-bold">
                   ACESSAR PAINEL
