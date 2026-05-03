@@ -16,12 +16,12 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { showSuccess } from '@/utils/toast';
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Reports = () => {
   const { budgets, setBudgets, vehicles, setVehicles, schedules, setSchedules, professionals } = useStorage();
   const navigate = useNavigate();
 
-  // Estados dos filtros globais
   const [filterName, setFilterName] = useState('');
   const [filterPlate, setFilterPlate] = useState('');
   const [filterModel, setFilterModel] = useState('');
@@ -36,23 +36,18 @@ const Reports = () => {
     setFilterMinKm(''); setFilterMaxKm('');
   };
 
-  // Função genérica de filtragem
   const applyFilters = (data: any[], dateKey: string = 'createdAt', plateKey: string = 'vehiclePlate', nameKey: string = 'clientName') => {
     return data.filter(item => {
       const vehicle = vehicles.find(v => v.plate === item[plateKey]);
-      
       const matchesName = item[nameKey]?.toLowerCase().includes(filterName.toLowerCase());
       const matchesPlate = item[plateKey]?.toLowerCase().includes(filterPlate.toLowerCase());
       const matchesModel = vehicle ? vehicle.model.toLowerCase().includes(filterModel.toLowerCase()) : true;
-      
       const itemDate = new Date(item[dateKey]);
       const matchesDateStart = filterDateStart ? itemDate >= new Date(filterDateStart) : true;
       const matchesDateEnd = filterDateEnd ? itemDate <= new Date(filterDateEnd) : true;
-      
       const kmValue = item.km || vehicle?.currentKm || 0;
       const matchesMinKm = filterMinKm ? kmValue >= Number(filterMinKm) : true;
       const matchesMaxKm = filterMaxKm ? kmValue <= Number(filterMaxKm) : true;
-
       return matchesName && matchesPlate && matchesModel && matchesDateStart && matchesDateEnd && matchesMinKm && matchesMaxKm;
     });
   };
@@ -65,7 +60,6 @@ const Reports = () => {
     acc + b.items.reduce((sum, i) => sum + (i.quantity * i.unitValue), 0), 0
   );
 
-  // Ações
   const handleDownloadPDF = (budget: any) => {
     const doc = generateBudgetPDF(budget);
     doc.save(`orcamento_${budget.number}.pdf`);
@@ -82,7 +76,6 @@ const Reports = () => {
         <p className="text-slate-500">Filtre, analise e gerencie todos os dados do sistema</p>
       </div>
 
-      {/* Filtros Globais */}
       <Card className="mb-8 border-blue-100 shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-bold flex items-center gap-2 text-blue-700 uppercase">
@@ -170,8 +163,18 @@ const Reports = () => {
                       <TableCell className="text-right font-bold text-green-600">{formatCurrency(b.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0))}</TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => handleDownloadPDF(b)}><FileDown size={16} /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => navigate('/budgets')}><Edit2 size={16} /></Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => handleDownloadPDF(b)}><FileDown size={16} /></Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Baixar PDF</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => navigate('/budgets')}><Edit2 size={16} /></Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar Orçamento</TooltipContent>
+                          </Tooltip>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -206,9 +209,24 @@ const Reports = () => {
                       <TableCell className="text-right font-bold">{formatCurrency(b.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0))}</TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => handleDownloadPDF(b)}><FileDown size={16} /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleWhatsApp(b.clientPhone, `Olá ${b.clientName}! Segue seu orçamento #${b.number}.`)} className="text-green-600"><MessageSquare size={16} /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => navigate('/budgets')}><Edit2 size={16} /></Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => handleDownloadPDF(b)}><FileDown size={16} /></Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Baixar PDF</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => handleWhatsApp(b.clientPhone, `Olá ${b.clientName}! Segue seu orçamento #${b.number}.`)} className="text-green-600"><MessageSquare size={16} /></Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Enviar WhatsApp</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => navigate('/budgets')}><Edit2 size={16} /></Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar Orçamento</TooltipContent>
+                          </Tooltip>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -241,8 +259,18 @@ const Reports = () => {
                       <TableCell>{v.currentKm.toLocaleString()} KM</TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => handleWhatsApp(v.clientPhone, `Olá ${v.clientName}! Como está seu ${v.model}?`)} className="text-green-600"><MessageSquare size={16} /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => navigate('/vehicles')}><Edit2 size={16} /></Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => handleWhatsApp(v.clientPhone, `Olá ${v.clientName}! Como está seu ${v.model}?`)} className="text-green-600"><MessageSquare size={16} /></Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Enviar WhatsApp</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => navigate('/vehicles')}><Edit2 size={16} /></Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar Veículo</TooltipContent>
+                          </Tooltip>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -276,12 +304,22 @@ const Reports = () => {
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-1">
                           {s.status === 'Pendente' && (
-                            <Button variant="ghost" size="icon" className="text-green-600" onClick={() => {
-                              setSchedules(schedules.map(x => x.id === s.id ? {...x, status: 'Confirmado'} : x));
-                              showSuccess('Confirmado!');
-                            }}><CheckCircle2 size={16} /></Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="text-green-600" onClick={() => {
+                                  setSchedules(schedules.map(x => x.id === s.id ? {...x, status: 'Confirmado'} : x));
+                                  showSuccess('Confirmado!');
+                                }}><CheckCircle2 size={16} /></Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Confirmar Agendamento</TooltipContent>
+                            </Tooltip>
                           )}
-                          <Button variant="ghost" size="icon" onClick={() => navigate('/schedules')}><Edit2 size={16} /></Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => navigate('/schedules')}><Edit2 size={16} /></Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar Agendamento</TooltipContent>
+                          </Tooltip>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -324,7 +362,12 @@ const Reports = () => {
                         <TableCell>{p.commissionRate}%</TableCell>
                         <TableCell className="text-right font-bold text-green-600">{formatCurrency(totalComm)}</TableCell>
                         <TableCell className="text-center">
-                          <Button variant="ghost" size="icon" onClick={() => navigate('/professionals')}><Edit2 size={16} /></Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => navigate('/professionals')}><Edit2 size={16} /></Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar Profissional</TooltipContent>
+                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     );
