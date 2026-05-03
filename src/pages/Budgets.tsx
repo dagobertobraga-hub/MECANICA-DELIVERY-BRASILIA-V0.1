@@ -232,17 +232,33 @@ const Budgets = () => {
               <div className="mt-8 border-t pt-6">
                 <h3 className="font-bold mb-4">Itens do Orçamento</h3>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
-                  <Input className="md:col-span-2" placeholder="DESCRIÇÃO DO ITEM" value={newItem.description} onChange={e => setNewItem({...newItem, description: toUpperCase(e.target.value)})} />
-                  <Input type="number" placeholder="QTD" value={newItem.quantity} onChange={e => setNewItem({...newItem, quantity: Number(e.target.value)})} />
-                  <Input type="number" placeholder="VALOR UNIT." value={newItem.unitValue} onChange={e => setNewItem({...newItem, unitValue: Number(e.target.value)})} />
-                  <Select value={newItem.type} onValueChange={v => setNewItem({...newItem, type: v as 'Peça' | 'Serviço'})}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Peça">Peça</SelectItem>
-                      <SelectItem value="Serviço">Serviço</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button onClick={addItem} className="md:col-span-4 bg-slate-800">Adicionar Item</Button>
+                  <div className="md:col-span-2 space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Descrição do Item</label>
+                    <Input placeholder="EX: TROCA DE ÓLEO" value={newItem.description} onChange={e => setNewItem({...newItem, description: toUpperCase(e.target.value)})} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Qtd</label>
+                    <Input type="number" placeholder="1" value={newItem.quantity} onChange={e => setNewItem({...newItem, quantity: Number(e.target.value)})} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Valor Unit.</label>
+                    <Input type="number" placeholder="0.00" value={newItem.unitValue} onChange={e => setNewItem({...newItem, unitValue: Number(e.target.value)})} />
+                  </div>
+                  <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-4 gap-2">
+                    <div className="md:col-span-3 space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Tipo</label>
+                      <Select value={newItem.type} onValueChange={v => setNewItem({...newItem, type: v as 'Peça' | 'Serviço'})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Peça">Peça</SelectItem>
+                          <SelectItem value="Serviço">Serviço</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-end">
+                      <Button onClick={addItem} className="w-full bg-slate-800">Adicionar</Button>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
