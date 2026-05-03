@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, UserCheck } from 'lucide-react';
+import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, UserCheck, Car } from 'lucide-react';
 import { Budget, BudgetItem, BudgetStatus } from '@/lib/types';
 import { formatCurrency, toUpperCase } from '@/lib/utils-format';
 import { generateBudgetPDF } from '@/lib/pdf-generator';
@@ -15,7 +15,7 @@ import { showSuccess } from '@/utils/toast';
 import PDFImportDialog from '@/components/PDFImportDialog';
 
 const Budgets = () => {
-  const { budgets, setBudgets, professionals } = useStorage();
+  const { budgets, setBudgets, professionals, vehicles } = useStorage();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
@@ -90,6 +90,20 @@ const Budgets = () => {
     setIsModalOpen(true);
   };
 
+  const handleSelectVehicle = (vehicleId: string) => {
+    const v = vehicles.find(veh => veh.id === vehicleId);
+    if (v) {
+      setFormData({
+        ...formData,
+        clientName: v.clientName,
+        clientPhone: v.clientPhone,
+        vehiclePlate: v.plate,
+        km: v.currentKm
+      });
+      showSuccess('Dados do veículo carregados!');
+    }
+  };
+
   const addItem = () => {
     if (newItem.description && newItem.unitValue) {
       setFormData({
@@ -157,6 +171,25 @@ const Budgets = () => {
               <DialogHeader>
                 <DialogTitle>{editingBudget ? 'Editar Orçamento' : 'Novo Orçamento'}</DialogTitle>
               </DialogHeader>
+              
+              {!editingBudget && (
+                <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                  <label className="text-xs font-bold text-blue-600 uppercase mb-2 block">Buscar Veículo/Cliente Existente</label>
+                  <Select onValueChange={handleSelectVehicle}>
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="PESQUISAR POR PLACA OU NOME..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vehicles.map(v => (
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.plate} - {v.clientName} ({v.model})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Nome do Cliente</label>
