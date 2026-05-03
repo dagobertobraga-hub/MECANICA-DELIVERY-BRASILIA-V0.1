@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, Car, Users, LogOut, Menu, X, Calendar, UserCheck, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, FileText, Car, Users, LogOut, Menu, X, Calendar, UserCheck, BarChart3, MessageCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { useStorage } from '@/hooks/use-storage';
@@ -28,6 +28,11 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
     navigate('/login');
   };
 
+  const handleSupportWhatsApp = () => {
+    const msg = "Olá! Gostaria de suporte sobre o sistema da Mecânica Delivery Brasília.";
+    window.open(`https://wa.me/5561991386470?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
   const navItems = isAdmin ? [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
     { label: 'Orçamentos', path: '/budgets', icon: FileText },
@@ -53,9 +58,9 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
         "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0",
         isMenuOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="p-6">
+        <div className="p-6 flex flex-col h-full">
           <h1 className="text-xl font-black text-blue-700 mb-8 hidden md:block tracking-tighter">MECÂNICA DELIVERY</h1>
-          <nav className="space-y-2">
+          <nav className="space-y-2 flex-1">
             {navItems.map((item) => (
               <Link
                 key={item.path}
@@ -79,16 +84,25 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
                 )}
               </Link>
             ))}
+            
+            <button 
+              onClick={handleSupportWhatsApp}
+              className="flex items-center gap-3 w-full px-4 py-3 text-green-600 hover:bg-green-50 rounded-lg transition-colors font-bold mt-4 border border-green-100"
+            >
+              <MessageCircle size={20} />
+              Suporte WhatsApp
+            </button>
           </nav>
-        </div>
-        <div className="absolute bottom-0 w-full p-6 border-t bg-white">
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-bold"
-          >
-            <LogOut size={20} />
-            Sair do Sistema
-          </button>
+
+          <div className="pt-6 border-t bg-white">
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-3 w-full px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-bold"
+            >
+              <LogOut size={20} />
+              Sair do Sistema
+            </button>
+          </div>
         </div>
       </aside>
 

@@ -67,6 +67,11 @@ const ClientDashboard = () => {
     setRating(5);
   };
 
+  const handleContactWhatsApp = () => {
+    const msg = `Olá! Sou ${vehicle.clientName}, proprietário do veículo ${vehicle.model} (${vehicle.plate}). Gostaria de tirar uma dúvida.`;
+    window.open(`https://wa.me/5561991386470?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
   return (
     <Layout isAdmin={false}>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -74,23 +79,32 @@ const ClientDashboard = () => {
           <h2 className="text-3xl font-bold text-slate-800">Olá, {vehicle.clientName}!</h2>
           <p className="text-slate-500">Acompanhe seu {vehicle.model} ({vehicle.plate})</p>
         </div>
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogTrigger asChild><Button className="bg-blue-600"><CalendarPlus className="mr-2" /> Agendar Serviço</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Solicitar Agendamento</DialogTitle></DialogHeader>
-            <div className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">DATA DESEJADA</label>
-                <Input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} />
+        <div className="flex gap-2 w-full md:w-auto">
+          <Button variant="outline" className="flex-1 md:flex-none border-green-600 text-green-600 hover:bg-green-50" onClick={handleContactWhatsApp}>
+            <MessageSquare className="mr-2" size={18} /> Falar no WhatsApp
+          </Button>
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex-1 md:flex-none bg-blue-600">
+                <CalendarPlus className="mr-2" /> Agendar Serviço
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Solicitar Agendamento</DialogTitle></DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">DATA DESEJADA</label>
+                  <Input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">HORÁRIO</label>
+                  <Input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} />
+                </div>
+                <Button onClick={handleSaveSchedule} className="w-full bg-blue-600 h-12 font-bold">Enviar Solicitação</Button>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">HORÁRIO</label>
-                <Input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} />
-              </div>
-              <Button onClick={handleSaveSchedule} className="w-full bg-blue-600 h-12 font-bold">Enviar Solicitação</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
