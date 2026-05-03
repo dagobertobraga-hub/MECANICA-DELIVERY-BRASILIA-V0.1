@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, Car, Users, LogOut, Menu, X, Calendar } from 'lucide-react';
+import { LayoutDashboard, FileText, Car, Users, LogOut, Menu, X, Calendar, UserCheck } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { useStorage } from '@/hooks/use-storage';
@@ -20,10 +20,7 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
     if (!userRole && location.pathname !== '/login') {
       navigate('/login');
     }
-    if (userRole === 'client' && propIsAdmin === true) {
-      navigate('/client-dashboard');
-    }
-  }, [userRole, location.pathname, navigate, propIsAdmin]);
+  }, [userRole, location.pathname, navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('user_role');
@@ -36,6 +33,7 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
     { label: 'Orçamentos', path: '/budgets', icon: FileText },
     { label: 'Veículos', path: '/vehicles', icon: Car },
     { label: 'Agendamentos', path: '/schedules', icon: Calendar, badge: pendingSchedules },
+    { label: 'Equipe', path: '/professionals', icon: UserCheck },
     { label: 'Admins', path: '/admins', icon: Users },
   ] : [
     { label: 'Meu Veículo', path: '/client-dashboard', icon: Car },

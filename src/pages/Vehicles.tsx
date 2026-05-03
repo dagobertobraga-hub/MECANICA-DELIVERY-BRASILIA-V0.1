@@ -3,15 +3,15 @@ import Layout from '@/components/Layout';
 import { useStorage } from '@/hooks/use-storage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Trash2, History, Wrench, MessageSquare, TrendingUp } from 'lucide-react';
+import { Plus, Search, Trash2, Wrench, MessageSquare, TrendingUp, Calendar, Info } from 'lucide-react';
 import { Vehicle, MaintenanceRecord } from '@/lib/types';
-import { formatCurrency, toUpperCase, calculateNextMaintenance } from '@/lib/utils-format';
+import { formatCurrency, toUpperCase } from '@/lib/utils-format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { showSuccess } from '@/utils/toast';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { REVISION_PLANS, getNextRevision, calculateUsagePrediction } from '@/lib/maintenance-logic';
 import { cn } from '@/lib/utils';
 
 const Vehicles = () => {
@@ -22,23 +22,11 @@ const Vehicles = () => {
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
 
   const [vehicleForm, setVehicleForm] = useState<Partial<Vehicle>>({
-    plate: '',
-    model: '',
-    clientName: '',
-    clientPhone: '',
-    password: '',
-    currentKm: 0,
-    oilIntervalKm: 10000,
-    lastOilChangeKm: 0,
-    maintenances: []
+    plate: '', model: '', clientName: '', clientPhone: '', currentKm: 0, oilIntervalKm: 10000, avgKmMonth: 1000
   });
 
   const [maintenanceForm, setMaintenanceForm] = useState<Partial<MaintenanceRecord>>({
-    description: '',
-    km: 0,
-    value: 0,
-    type: 'Outros',
-    date: new Date().toISOString().split('T')[0]
+    description: '', km: 0, value: 0, type: 'Outros', date: new Date().toISOString().split('T')[0]
   });
 
   const handleSaveVehicle = () => {
@@ -48,15 +36,16 @@ const Vehicles = () => {
       model: toUpperCase(vehicleForm.model || ''),
       clientName: toUpperCase(vehicleForm.clientName || ''),
       clientPhone: vehicleForm.clientPhone || '',
-      password: vehicleForm.password || vehicleForm.plate?.slice(-4),
+      password: vehicleForm.plate?.slice(-4),
       currentKm: vehicleForm.currentKm || 0,
       oilIntervalKm: vehicleForm.oilIntervalKm || 10000,
-      lastOilChangeKm: vehicleForm.lastOilChangeKm || 0,
+      lastOilChangeKm: 0,
+      avgKmMonth: vehicleForm.avgKmMonth || 1000,
       maintenances: []
     };
     setVehicles([...vehicles, newVehicle]);
     setIsVehicleModalOpen(false);
-    showSuccess('Veículo cadastrado com sucesso!');
+    showSuccess('Veículo cadastrado!');
   };
 
   const handleAddMaintenance = () => {
@@ -69,32 +58,16 @@ const Vehicles = () => {
         value: maintenanceForm.value || 0,
         type: maintenanceForm.type as any
       };
-
       const updatedVehicle = {
         ...selectedVehicle,
         currentKm: Math.max(selectedVehicle.currentKm, newRecord.km),
         lastOilChangeKm: newRecord.type === 'Óleo' ? newRecord.km : selectedVehicle.lastOilChangeKm,
         maintenances: [...selectedVehicle.maintenances, newRecord]
       };
-
       setVehicles(vehicles.map(v => v.id === selectedVehicle.id ? updatedVehicle : v));
       setIsMaintenanceModalOpen(false);
       showSuccess('Manutenção registrada!');
     }
-  };
-
-  const sendMaintenanceSuggestion = (vehicle: Vehicle) => {
-    const remaining = calculateNextMaintenance(vehicle.currentKm, vehicle.lastOilChangeKm, vehicle.oilIntervalKm);
-    let message = `Olá ${vehicle.clientName}! Aqui é da Mecânica Delivery Brasília.\n\nNotamos que seu veículo ${vehicle.model} (Placa: ${vehicle.plate}) está com ${vehicle.currentKm} KM.`;
-    
-    if (remaining <= 500) {
-      message += `\n\n⚠️ ALERTA: Sua troca de óleo está próxima ou vencida! Faltam apenas ${remaining} KM para o intervalo de ${vehicle.oilIntervalKm} KM.`;
-    } else {
-      message += `\n\nSua próxima troca de óleo está prevista para daqui a ${remaining} KM.`;
-    }
-    
-    message += `\n\nDeseja agendar uma revisão?`;
-    window.open(`https://wa.me/55${vehicle.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const filteredVehicles = vehicles.filter(v => 
@@ -103,39 +76,26 @@ const Vehicles = () => {
   );
 
   return (
-    <Layout>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+    <Layout isAdmin={true}>
+      <div className="flex justify-between items-center mb-8">
         <div>
           <h2 className="text-3xl font-bold text-slate-800">Veículos</h2>
           <p className="text-slate-500">Gestão de frotas e manutenção preventiva</p>
         </div>
         <Dialog open={isVehicleModalOpen} onOpenChange={setIsVehicleModalOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="mr-2" size={20} /> Novo Veículo
-            </Button>
-          </DialogTrigger>
+          <DialogTrigger asChild><Button className="bg-blue-600"><Plus className="mr-2" /> Novo Veículo</Button></DialogTrigger>
           <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Cadastrar Veículo</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>Cadastrar Veículo</DialogTitle></DialogHeader>
             <div className="space-y-4 mt-4">
-              <Input placeholder="PLACA (MERC0SUL)" value={vehicleForm.plate} onChange={e => setVehicleForm({...vehicleForm, plate: toUpperCase(e.target.value)})} />
-              <Input placeholder="MODELO DO VEÍCULO" value={vehicleForm.model} onChange={e => setVehicleForm({...vehicleForm, model: toUpperCase(e.target.value)})} />
-              <Input placeholder="NOME DO CLIENTE" value={vehicleForm.clientName} onChange={e => setVehicleForm({...vehicleForm, clientName: toUpperCase(e.target.value)})} />
+              <Input placeholder="PLACA" value={vehicleForm.plate} onChange={e => setVehicleForm({...vehicleForm, plate: e.target.value})} />
+              <Input placeholder="MODELO" value={vehicleForm.model} onChange={e => setVehicleForm({...vehicleForm, model: e.target.value})} />
+              <Input placeholder="CLIENTE" value={vehicleForm.clientName} onChange={e => setVehicleForm({...vehicleForm, clientName: e.target.value})} />
               <Input placeholder="WHATSAPP" value={vehicleForm.clientPhone} onChange={e => setVehicleForm({...vehicleForm, clientPhone: e.target.value})} />
-              <Input placeholder="SENHA DE ACESSO (OPCIONAL)" value={vehicleForm.password} onChange={e => setVehicleForm({...vehicleForm, password: e.target.value})} />
               <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium">KM Atual</label>
-                  <Input type="number" value={vehicleForm.currentKm} onChange={e => setVehicleForm({...vehicleForm, currentKm: Number(e.target.value)})} />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium">Intervalo Óleo (KM)</label>
-                  <Input type="number" value={vehicleForm.oilIntervalKm} onChange={e => setVehicleForm({...vehicleForm, oilIntervalKm: Number(e.target.value)})} />
-                </div>
+                <Input type="number" placeholder="KM ATUAL" value={vehicleForm.currentKm} onChange={e => setVehicleForm({...vehicleForm, currentKm: Number(e.target.value)})} />
+                <Input type="number" placeholder="KM/MÊS (MÉDIA)" value={vehicleForm.avgKmMonth} onChange={e => setVehicleForm({...vehicleForm, avgKmMonth: Number(e.target.value)})} />
               </div>
-              <Button onClick={handleSaveVehicle} className="w-full bg-blue-600">Salvar Veículo</Button>
+              <Button onClick={handleSaveVehicle} className="w-full bg-blue-600">Salvar</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -143,18 +103,14 @@ const Vehicles = () => {
 
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-        <Input 
-          className="pl-10" 
-          placeholder="Buscar por placa ou cliente..." 
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-        />
+        <Input className="pl-10" placeholder="Buscar por placa ou cliente..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
       </div>
 
       <div className="grid grid-cols-1 gap-6">
         {filteredVehicles.map((vehicle) => {
-          const remaining = calculateNextMaintenance(vehicle.currentKm, vehicle.lastOilChangeKm, vehicle.oilIntervalKm);
-          const isOverdue = remaining === 0;
+          const nextRev = getNextRevision(vehicle.currentKm);
+          const prediction = calculateUsagePrediction(vehicle.currentKm, vehicle.avgKmMonth);
+          const isOverdue = (vehicle.currentKm - vehicle.lastOilChangeKm) >= vehicle.oilIntervalKm;
 
           return (
             <Card key={vehicle.id} className="overflow-hidden">
@@ -166,9 +122,7 @@ const Vehicles = () => {
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-2xl font-black tracking-tighter text-slate-800">{vehicle.plate}</span>
-                          <Badge variant={isOverdue ? "destructive" : "outline"}>
-                            {isOverdue ? "MANUTENÇÃO VENCIDA" : "EM DIA"}
-                          </Badge>
+                          <Badge variant={isOverdue ? "destructive" : "outline"}>{isOverdue ? "VENCIDO" : "EM DIA"}</Badge>
                         </div>
                         <h3 className="text-lg font-medium text-slate-600">{vehicle.model}</h3>
                         <p className="text-sm text-slate-400">{vehicle.clientName} • {vehicle.clientPhone}</p>
@@ -180,75 +134,35 @@ const Vehicles = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="p-3 bg-slate-50 rounded-lg border">
-                        <p className="text-xs font-medium text-slate-500 uppercase">Próxima Troca de Óleo</p>
-                        <p className={cn("text-lg font-bold", isOverdue ? "text-red-600" : "text-slate-800")}>
-                          {isOverdue ? "VENCIDO" : `EM ${remaining.toLocaleString()} KM`}
-                        </p>
+                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                        <p className="text-[10px] font-bold text-blue-600 uppercase">Próxima Revisão Sugerida</p>
+                        <p className="text-sm font-bold text-slate-800">{nextRev.name}</p>
+                        <p className="text-[10px] text-slate-500">Faltam {prediction.remainingKm.toLocaleString()} KM</p>
+                      </div>
+                      <div className="p-3 bg-amber-50 rounded-lg border border-amber-100">
+                        <p className="text-[10px] font-bold text-amber-600 uppercase">Previsão de Data</p>
+                        <p className="text-sm font-bold text-slate-800">{prediction.estimatedDate.toLocaleDateString('pt-BR')}</p>
+                        <p className="text-[10px] text-slate-500">Baseado em {vehicle.avgKmMonth} KM/mês</p>
                       </div>
                       <div className="p-3 bg-slate-50 rounded-lg border">
-                        <p className="text-xs font-medium text-slate-500 uppercase">Total Investido</p>
-                        <p className="text-lg font-bold text-slate-800">
-                          {formatCurrency(vehicle.maintenances.reduce((acc, m) => acc + m.value, 0))}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-slate-50 rounded-lg border">
-                        <p className="text-xs font-medium text-slate-500 uppercase">Registros</p>
-                        <p className="text-lg font-bold text-slate-800">{vehicle.maintenances.length}</p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase">Total Investido</p>
+                        <p className="text-sm font-bold text-slate-800">{formatCurrency(vehicle.maintenances.reduce((acc, m) => acc + m.value, 0))}</p>
                       </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm" onClick={() => {
-                        setSelectedVehicle(vehicle);
-                        setIsMaintenanceModalOpen(true);
-                      }}>
-                        <Wrench className="mr-2" size={16} /> Nova Manutenção
+                      <Button variant="outline" size="sm" onClick={() => { setSelectedVehicle(vehicle); setIsMaintenanceModalOpen(true); }}>
+                        <Wrench className="mr-2" size={16} /> Registrar Manutenção
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => sendMaintenanceSuggestion(vehicle)} className="text-green-600 border-green-200 hover:bg-green-50">
+                      <Button variant="outline" size="sm" className="text-green-600 border-green-200" onClick={() => {
+                        const msg = `Olá ${vehicle.clientName}! Notamos que seu ${vehicle.model} está com ${vehicle.currentKm} KM. Sugerimos a ${nextRev.name} para daqui a ${prediction.remainingKm} KM (aprox. ${prediction.estimatedDate.toLocaleDateString()}). Deseja agendar?`;
+                        window.open(`https://wa.me/55${vehicle.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
+                      }}>
                         <MessageSquare className="mr-2" size={16} /> Sugerir Revisão
                       </Button>
-                      <Button variant="outline" size="sm" className="text-red-500 border-red-200 hover:bg-red-50" onClick={() => {
-                        if(confirm('Excluir veículo e todo o histórico?')) {
-                          setVehicles(vehicles.filter(v => v.id !== vehicle.id));
-                        }
-                      }}>
+                      <Button variant="ghost" size="sm" className="text-red-500" onClick={() => { if(confirm('Excluir veículo?')) setVehicles(vehicles.filter(v => v.id !== vehicle.id)); }}>
                         <Trash2 size={16} />
                       </Button>
-                    </div>
-                  </div>
-
-                  <div className="w-full lg:w-1/3 space-y-4">
-                    <h4 className="font-bold text-sm flex items-center gap-2">
-                      <TrendingUp size={16} /> Evolução de KM
-                    </h4>
-                    <div className="h-[150px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={[...vehicle.maintenances].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                          <XAxis dataKey="date" hide />
-                          <YAxis hide />
-                          <Tooltip labelFormatter={(v) => new Date(v).toLocaleDateString()} />
-                          <Line type="monotone" dataKey="km" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="max-h-[150px] overflow-y-auto space-y-2 pr-2">
-                      {vehicle.maintenances.slice().reverse().map(m => (
-                        <div key={m.id} className="flex justify-between items-center text-xs p-2 bg-slate-50 rounded border">
-                          <div>
-                            <p className="font-bold">{m.description}</p>
-                            <p className="text-slate-400">{new Date(m.date).toLocaleDateString()} • {m.km} KM</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold">{formatCurrency(m.value)}</p>
-                            <button onClick={() => {
-                              const updated = vehicle.maintenances.filter(x => x.id !== m.id);
-                              setVehicles(vehicles.map(v => v.id === vehicle.id ? {...v, maintenances: updated} : v));
-                            }} className="text-red-400 hover:text-red-600">Remover</button>
-                          </div>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 </div>
@@ -260,37 +174,21 @@ const Vehicles = () => {
 
       <Dialog open={isMaintenanceModalOpen} onOpenChange={setIsMaintenanceModalOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Registrar Manutenção - {selectedVehicle?.plate}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Registrar Manutenção - {selectedVehicle?.plate}</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <label className="text-xs font-medium">Data</label>
-                <Input type="date" value={maintenanceForm.date} onChange={e => setMaintenanceForm({...maintenanceForm, date: e.target.value})} />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium">KM no Serviço</label>
-                <Input type="number" value={maintenanceForm.km} onChange={e => setMaintenanceForm({...maintenanceForm, km: Number(e.target.value)})} />
-              </div>
+              <Input type="date" value={maintenanceForm.date} onChange={e => setMaintenanceForm({...maintenanceForm, date: e.target.value})} />
+              <Input type="number" placeholder="KM" value={maintenanceForm.km} onChange={e => setMaintenanceForm({...maintenanceForm, km: Number(e.target.value)})} />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium">Tipo de Serviço</label>
-              <span className="text-xs text-slate-400 block mb-1">Selecione o tipo de manutenção realizada</span>
-              <Select value={maintenanceForm.type} onValueChange={v => setMaintenanceForm({...maintenanceForm, type: v as any})}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {['Óleo', 'Filtro', 'Correia', 'Suspensão', 'Freios', 'Outros'].map(t => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Input placeholder="DESCRIÇÃO DETALHADA" value={maintenanceForm.description} onChange={e => setMaintenanceForm({...maintenanceForm, description: toUpperCase(e.target.value)})} />
-            <Input type="number" placeholder="VALOR DO SERVIÇO (R$)" value={maintenanceForm.value} onChange={e => setMaintenanceForm({...maintenanceForm, value: Number(e.target.value)})} />
-            <Button onClick={handleAddMaintenance} className="w-full bg-blue-600">Registrar Serviço</Button>
+            <Select value={maintenanceForm.type} onValueChange={v => setMaintenanceForm({...maintenanceForm, type: v as any})}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {['Óleo', 'Filtro', 'Correia', 'Suspensão', 'Freios', 'Injeção', 'Elétrica', 'Outros'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Input placeholder="DESCRIÇÃO" value={maintenanceForm.description} onChange={e => setMaintenanceForm({...maintenanceForm, description: toUpperCase(e.target.value)})} />
+            <Input type="number" placeholder="VALOR R$" value={maintenanceForm.value} onChange={e => setMaintenanceForm({...maintenanceForm, value: Number(e.target.value)})} />
+            <Button onClick={handleAddMaintenance} className="w-full bg-blue-600">Salvar</Button>
           </div>
         </DialogContent>
       </Dialog>

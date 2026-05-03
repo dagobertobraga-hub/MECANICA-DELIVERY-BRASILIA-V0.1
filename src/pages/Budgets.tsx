@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, UserCheck } from 'lucide-react';
 import { Budget, BudgetItem, BudgetStatus } from '@/lib/types';
 import { formatCurrency, toUpperCase } from '@/lib/utils-format';
 import { generateBudgetPDF } from '@/lib/pdf-generator';
@@ -15,7 +15,7 @@ import { showSuccess } from '@/utils/toast';
 import PDFImportDialog from '@/components/PDFImportDialog';
 
 const Budgets = () => {
-  const { budgets, setBudgets } = useStorage();
+  const { budgets, setBudgets, professionals } = useStorage();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
@@ -26,7 +26,8 @@ const Budgets = () => {
     vehiclePlate: '',
     km: 0,
     status: 'Rascunho',
-    items: []
+    items: [],
+    professionalId: ''
   });
 
   const [newItem, setNewItem] = useState<Partial<BudgetItem>>({
@@ -36,9 +37,25 @@ const Budgets = () => {
     type: 'Peça'
   });
 
+  const calculateTotals = (items: BudgetItem[]) => {
+    const parts = items.filter(i => i.type === 'Peça').reduce((acc, i) => acc + (i.quantity * i.unitValue), 0);
+    const services = items.filter(i => i.type === 'Serviço').reduce((acc, i) => acc + (i.quantity * i.unitValue), 0);
+    return { parts, services, total: parts + services };
+  };
+
   const handleSave = () => {
+    const totals = calculateTotals(formData.items || []);
+    const prof = professionals.find(p => p.id === formData.professionalId);
+    const commission = prof ? (totals.services * (prof.commissionRate / 100)) : 0;
+
+    const budgetData = {
+      ...formData,
+      commissionValue: commission,
+      updatedAt: new Date().toISOString()
+    };
+
     if (editingBudget) {
-      setBudgets(budgets.map(b => b.id === editingBudget.id ? { ...editingBudget, ...formData, updatedAt: new Date().toISOString() } as Budget : b));
+      setBudgets(budgets.map(b => b.id === editingBudget.id ? { ...editingBudget, ...budgetData } as Budget : b));
     } else {
       const newBudget: Budget = {
         id: Math.random().toString(36).substr(2, 9),
@@ -49,6 +66,8 @@ const Budgets = () => {
         km: formData.km || 0,
         status: formData.status as BudgetStatus,
         items: formData.items || [],
+        professionalId: formData.professionalId,
+        commissionValue: commission,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -82,10 +101,7 @@ const Budgets = () => {
   };
 
   const removeItem = (id: string) => {
-    setFormData({
-      ...formData,
-      items: formData.items?.filter(i => i.id !== id)
-    });
+    setFormData({ ...formData, items: formData.items?.filter(i => i.id !== id) });
   };
 
   const handleDownloadPDF = (budget: Budget) => {
@@ -94,12 +110,9 @@ const Budgets = () => {
   };
 
   const handleWhatsApp = (budget: Budget) => {
-    const phone = prompt('Digite o número do WhatsApp (com DDD):', budget.clientPhone);
-    if (phone) {
-      const total = budget.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0);
-      const message = `Olá! Segue o orçamento da Mecânica Delivery Brasília.\n\nOrçamento: ${budget.number}\nVeículo: ${budget.vehiclePlate.toUpperCase()}\nTotal: ${formatCurrency(total)}\nStatus: ${budget.status}\n\nPara ver os detalhes, entre em contato conosco.`;
-      window.open(`https://wa.me/55${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
-    }
+    const total = budget.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0);
+    const message = `Olá! Segue o orçamento da Mecânica Delivery Brasília.\n\nOrçamento: ${budget.number}\nVeículo: ${budget.vehiclePlate.toUpperCase()}\nTotal: ${formatCurrency(total)}\nStatus: ${budget.status}\n\nPara ver os detalhes, entre em contato conosco.`;
+    window.open(`https://wa.me/55${budget.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const filteredBudgets = budgets.filter(b => 
@@ -123,20 +136,17 @@ const Budgets = () => {
   };
 
   return (
-    <Layout>
+    <Layout isAdmin={true}>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h2 className="text-3xl font-bold text-slate-800">Orçamentos</h2>
-          <p className="text-slate-500">Gerencie orçamentos de peças e serviços</p>
+          <p className="text-slate-500">Gestão de orçamentos de peças e serviços</p>
         </div>
         <div className="flex gap-2">
           <PDFImportDialog onImport={handleImportPDF} />
           <Dialog open={isModalOpen} onOpenChange={(open) => {
             setIsModalOpen(open);
-            if (!open) {
-              setEditingBudget(null);
-              setFormData({ items: [] });
-            }
+            if (!open) { setEditingBudget(null); setFormData({ items: [] }); }
           }}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700">
@@ -150,42 +160,33 @@ const Budgets = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Nome do Cliente</label>
-                  <Input 
-                    value={formData.clientName} 
-                    onChange={e => setFormData({...formData, clientName: toUpperCase(e.target.value)})} 
-                    placeholder="NOME COMPLETO"
-                  />
+                  <Input value={formData.clientName} onChange={e => setFormData({...formData, clientName: toUpperCase(e.target.value)})} placeholder="NOME COMPLETO" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Telefone</label>
-                  <Input 
-                    value={formData.clientPhone} 
-                    onChange={e => setFormData({...formData, clientPhone: e.target.value})} 
-                    placeholder="(61) 99999-9999"
-                  />
+                  <Input value={formData.clientPhone} onChange={e => setFormData({...formData, clientPhone: e.target.value})} placeholder="(61) 99999-9999" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Placa do Veículo</label>
-                  <Input 
-                    value={formData.vehiclePlate} 
-                    onChange={e => setFormData({...formData, vehiclePlate: toUpperCase(e.target.value)})} 
-                    placeholder="ABC1D23"
-                  />
+                  <Input value={formData.vehiclePlate} onChange={e => setFormData({...formData, vehiclePlate: toUpperCase(e.target.value)})} placeholder="ABC1D23" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Quilometragem</label>
-                  <Input 
-                    type="number" 
-                    value={formData.km} 
-                    onChange={e => setFormData({...formData, km: Number(e.target.value)})} 
-                  />
+                  <Input type="number" value={formData.km} onChange={e => setFormData({...formData, km: Number(e.target.value)})} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Profissional Responsável</label>
+                  <Select value={formData.professionalId} onValueChange={v => setFormData({...formData, professionalId: v})}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o profissional" /></SelectTrigger>
+                    <SelectContent>
+                      {professionals.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Status</label>
                   <Select value={formData.status} onValueChange={v => setFormData({...formData, status: v as BudgetStatus})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {['Rascunho', 'Aberto', 'Em Negociação', 'Em Andamento', 'Aprovado', 'Concluído', 'Pago', 'Recusado'].map(s => (
                         <SelectItem key={s} value={s}>{s}</SelectItem>
@@ -198,28 +199,11 @@ const Budgets = () => {
               <div className="mt-8 border-t pt-6">
                 <h3 className="font-bold mb-4">Itens do Orçamento</h3>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
-                  <Input 
-                    className="md:col-span-2"
-                    placeholder="DESCRIÇÃO DO ITEM" 
-                    value={newItem.description} 
-                    onChange={e => setNewItem({...newItem, description: toUpperCase(e.target.value)})}
-                  />
-                  <Input 
-                    type="number" 
-                    placeholder="QTD" 
-                    value={newItem.quantity} 
-                    onChange={e => setNewItem({...newItem, quantity: Number(e.target.value)})}
-                  />
-                  <Input 
-                    type="number" 
-                    placeholder="VALOR UNIT." 
-                    value={newItem.unitValue} 
-                    onChange={e => setNewItem({...newItem, unitValue: Number(e.target.value)})}
-                  />
+                  <Input className="md:col-span-2" placeholder="DESCRIÇÃO DO ITEM" value={newItem.description} onChange={e => setNewItem({...newItem, description: toUpperCase(e.target.value)})} />
+                  <Input type="number" placeholder="QTD" value={newItem.quantity} onChange={e => setNewItem({...newItem, quantity: Number(e.target.value)})} />
+                  <Input type="number" placeholder="VALOR UNIT." value={newItem.unitValue} onChange={e => setNewItem({...newItem, unitValue: Number(e.target.value)})} />
                   <Select value={newItem.type} onValueChange={v => setNewItem({...newItem, type: v as 'Peça' | 'Serviço'})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Peça">Peça</SelectItem>
                       <SelectItem value="Serviço">Serviço</SelectItem>
@@ -237,16 +221,18 @@ const Budgets = () => {
                       </div>
                       <div className="flex items-center gap-4">
                         <p className="font-bold">{formatCurrency(item.quantity * item.unitValue)}</p>
-                        <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)} className="text-red-500">
-                          <Trash2 size={18} />
-                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)} className="text-red-500"><Trash2 size={18} /></Button>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-6 text-right">
-                  <p className="text-xl font-bold">Total: {formatCurrency(formData.items?.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0) || 0)}</p>
+                <div className="mt-6 grid grid-cols-2 gap-4 text-right">
+                  <div className="col-start-2 space-y-1">
+                    <p className="text-sm text-slate-500">Peças: {formatCurrency(calculateTotals(formData.items || []).parts)}</p>
+                    <p className="text-sm text-slate-500">Serviços: {formatCurrency(calculateTotals(formData.items || []).services)}</p>
+                    <p className="text-xl font-bold text-blue-700">Total: {formatCurrency(calculateTotals(formData.items || []).total)}</p>
+                  </div>
                 </div>
               </div>
 
@@ -261,12 +247,7 @@ const Budgets = () => {
 
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-        <Input 
-          className="pl-10" 
-          placeholder="Buscar por cliente, placa ou número..." 
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-        />
+        <Input className="pl-10" placeholder="Buscar por cliente, placa ou número..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
       </div>
 
       <div className="grid grid-cols-1 gap-4">
@@ -288,26 +269,10 @@ const Budgets = () => {
                     {formatCurrency(budget.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0))}
                   </p>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="icon" onClick={() => {
-                      setEditingBudget(budget);
-                      setFormData(budget);
-                      setIsModalOpen(true);
-                    }}>
-                      <Edit2 size={18} />
-                    </Button>
-                    <Button variant="outline" size="icon" onClick={() => handleDownloadPDF(budget)}>
-                      <FileDown size={18} />
-                    </Button>
-                    <Button variant="outline" size="icon" onClick={() => handleWhatsApp(budget)} className="text-green-600">
-                      <MessageSquare size={18} />
-                    </Button>
-                    <Button variant="outline" size="icon" onClick={() => {
-                      if(confirm('Deseja excluir este orçamento?')) {
-                        setBudgets(budgets.filter(b => b.id !== budget.id));
-                      }
-                    }} className="text-red-500">
-                      <Trash2 size={18} />
-                    </Button>
+                    <Button variant="outline" size="icon" onClick={() => { setEditingBudget(budget); setFormData(budget); setIsModalOpen(true); }}><Edit2 size={18} /></Button>
+                    <Button variant="outline" size="icon" onClick={() => handleDownloadPDF(budget)}><FileDown size={18} /></Button>
+                    <Button variant="outline" size="icon" onClick={() => handleWhatsApp(budget)} className="text-green-600"><MessageSquare size={18} /></Button>
+                    <Button variant="outline" size="icon" onClick={() => { if(confirm('Deseja excluir este orçamento?')) setBudgets(budgets.filter(b => b.id !== budget.id)); }} className="text-red-500"><Trash2 size={18} /></Button>
                   </div>
                 </div>
               </div>

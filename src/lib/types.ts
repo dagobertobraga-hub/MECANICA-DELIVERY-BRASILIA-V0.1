@@ -8,6 +8,13 @@ export interface BudgetItem {
   type: 'Peça' | 'Serviço';
 }
 
+export interface Professional {
+  id: string;
+  name: string;
+  role: string;
+  commissionRate: number; // Porcentagem (ex: 10 para 10%)
+}
+
 export interface Budget {
   id: string;
   number: string;
@@ -17,6 +24,8 @@ export interface Budget {
   km: number;
   status: BudgetStatus;
   items: BudgetItem[];
+  professionalId?: string;
+  commissionValue?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,7 +36,9 @@ export interface MaintenanceRecord {
   km: number;
   description: string;
   value: number;
-  type: 'Óleo' | 'Filtro' | 'Correia' | 'Suspensão' | 'Freios' | 'Outros';
+  type: 'Óleo' | 'Filtro' | 'Correia' | 'Suspensão' | 'Freios' | 'Injeção' | 'Elétrica' | 'Outros';
+  photos?: string[];
+  checklist?: Record<string, boolean>;
 }
 
 export interface Vehicle {
@@ -40,6 +51,7 @@ export interface Vehicle {
   currentKm: number;
   oilIntervalKm: number;
   lastOilChangeKm: number;
+  avgKmMonth?: number; // Previsão de uso mensal
   maintenances: MaintenanceRecord[];
 }
 
@@ -57,4 +69,14 @@ export interface Schedule {
   time: string;
   status: 'Pendente' | 'Confirmado' | 'Cancelado';
   createdAt: string;
+}
+
+export interface Review {
+  id: string;
+  clientName: string;
+  vehiclePlate: string;
+  rating: number;
+  comment: string;
+  date: string;
+  budgetId: string;
 }
