@@ -6,11 +6,8 @@ export const formatCurrency = (value: number) => {
 };
 
 export const formatPlate = (plate: string) => {
+  // Remove tudo que não for letra ou número e limita a 7 caracteres
   const cleaned = plate.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (cleaned.length <= 7) {
-    // Formato Mercosul: AAA1A11 ou Antigo: AAA1111
-    return cleaned;
-  }
   return cleaned.slice(0, 7);
 };
 

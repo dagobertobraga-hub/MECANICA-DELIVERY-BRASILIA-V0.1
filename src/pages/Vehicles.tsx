@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Trash2, Wrench, MessageSquare, TrendingUp, Calendar, Info, UserPlus } from 'lucide-react';
 import { Vehicle, MaintenanceRecord } from '@/lib/types';
-import { formatCurrency, toUpperCase } from '@/lib/utils-format';
+import { formatCurrency, toUpperCase, formatPlate } from '@/lib/utils-format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { showSuccess } from '@/utils/toast';
@@ -36,7 +36,7 @@ const Vehicles = () => {
   const handleSaveVehicle = () => {
     const newVehicle: Vehicle = {
       id: Math.random().toString(36).substr(2, 9),
-      plate: toUpperCase(vehicleForm.plate || ''),
+      plate: formatPlate(vehicleForm.plate || ''),
       model: toUpperCase(vehicleForm.model || ''),
       clientName: toUpperCase(vehicleForm.clientName || ''),
       clientPhone: vehicleForm.clientPhone || '',
@@ -126,7 +126,13 @@ const Vehicles = () => {
                 <Input placeholder="NOME DO CLIENTE" value={vehicleForm.clientName} onChange={e => setVehicleForm({...vehicleForm, clientName: toUpperCase(e.target.value)})} />
                 <Input placeholder="WHATSAPP" value={vehicleForm.clientPhone} onChange={e => setVehicleForm({...vehicleForm, clientPhone: e.target.value})} />
                 <div className="grid grid-cols-2 gap-2">
-                  <Input placeholder="PLACA" value={vehicleForm.plate} onChange={e => setVehicleForm({...vehicleForm, plate: toUpperCase(e.target.value)})} className="font-mono" />
+                  <Input 
+                    placeholder="PLACA" 
+                    value={vehicleForm.plate} 
+                    onChange={e => setVehicleForm({...vehicleForm, plate: formatPlate(e.target.value)})} 
+                    className="font-mono" 
+                    maxLength={7}
+                  />
                   <Input placeholder="MODELO" value={vehicleForm.model} onChange={e => setVehicleForm({...vehicleForm, model: toUpperCase(e.target.value)})} />
                 </div>
                 <div className="grid grid-cols-2 gap-2">

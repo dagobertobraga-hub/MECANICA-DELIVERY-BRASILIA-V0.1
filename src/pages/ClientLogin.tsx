@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toUpperCase } from '@/lib/utils-format';
+import { toUpperCase, formatPlate } from '@/lib/utils-format';
 import { showError, showSuccess } from '@/utils/toast';
 import { ShieldCheck, UserCircle, Eye, EyeOff, Info } from 'lucide-react';
 
@@ -23,7 +23,7 @@ const ClientLogin = () => {
 
   const handleClientLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanPlate = toUpperCase(plate).trim();
+    const cleanPlate = formatPlate(plate).trim();
     const cleanPass = password.trim();
     
     const vehicle = vehicles.find(v => v.plate === cleanPlate && v.password === cleanPass);
@@ -81,8 +81,9 @@ const ClientLogin = () => {
                   <Input 
                     placeholder="ABC1D23" 
                     value={plate} 
-                    onChange={e => setPlate(toUpperCase(e.target.value))} 
+                    onChange={e => setPlate(formatPlate(e.target.value))} 
                     className="uppercase font-mono text-lg"
+                    maxLength={7}
                     required
                   />
                 </div>

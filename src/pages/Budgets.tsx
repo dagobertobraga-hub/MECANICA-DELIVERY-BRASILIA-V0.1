@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, AlertCircle } from 'lucide-react';
 import { Budget, BudgetItem, BudgetStatus } from '@/lib/types';
-import { formatCurrency, toUpperCase } from '@/lib/utils-format';
+import { formatCurrency, toUpperCase, formatPlate } from '@/lib/utils-format';
 import { generateBudgetPDF } from '@/lib/pdf-generator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -57,7 +57,7 @@ const Budgets = () => {
         number: (budgets.length + 1).toString().padStart(4, '0'),
         clientName: formData.clientName || '',
         clientPhone: formData.clientPhone || '',
-        vehiclePlate: formData.vehiclePlate || '',
+        vehiclePlate: formatPlate(formData.vehiclePlate || ''),
         km: formData.km || 0,
         status: formData.status as BudgetStatus,
         items: formData.items || [],
@@ -75,7 +75,7 @@ const Budgets = () => {
   };
 
   const handleImportPDF = (data: any) => {
-    setFormData({ ...formData, clientName: data.clientName || formData.clientName, vehiclePlate: data.vehiclePlate || formData.vehiclePlate, km: data.km || formData.km, items: data.items || formData.items });
+    setFormData({ ...formData, clientName: data.clientName || formData.clientName, vehiclePlate: formatPlate(data.vehiclePlate || formData.vehiclePlate), km: data.km || formData.km, items: data.items || formData.items });
     setIsModalOpen(true);
   };
 
@@ -141,7 +141,13 @@ const Budgets = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <Input value={formData.clientName} onChange={e => setFormData({...formData, clientName: toUpperCase(e.target.value)})} placeholder="NOME DO CLIENTE" />
                 <Input value={formData.clientPhone} onChange={e => setFormData({...formData, clientPhone: e.target.value})} placeholder="TELEFONE" />
-                <Input value={formData.vehiclePlate} onChange={e => setFormData({...formData, vehiclePlate: toUpperCase(e.target.value)})} placeholder="PLACA" />
+                <Input 
+                  value={formData.vehiclePlate} 
+                  onChange={e => setFormData({...formData, vehiclePlate: formatPlate(e.target.value)})} 
+                  placeholder="PLACA" 
+                  maxLength={7}
+                  className="font-mono"
+                />
                 <Input type="number" value={formData.km} onChange={e => setFormData({...formData, km: Number(e.target.value)})} placeholder="KM" />
                 <Select value={formData.professionalId} onValueChange={v => setFormData({...formData, professionalId: v})}>
                   <SelectTrigger><SelectValue placeholder="Profissional" /></SelectTrigger>
