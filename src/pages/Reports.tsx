@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, toUpperCase } from '@/lib/utils-format';
-import { FileText, Car, Calendar, UserCheck, DollarSign, Search, FilterX } from 'lucide-react';
+import { FileText, Car, Calendar, UserCheck, DollarSign, Search, FilterX, Users, TrendingUp } from 'lucide-react';
 
 const Reports = () => {
   const { budgets, vehicles, schedules, professionals } = useStorage();
@@ -58,11 +58,18 @@ const Reports = () => {
     acc + b.items.reduce((sum, i) => sum + (i.quantity * i.unitValue), 0), 0
   );
 
+  // Cálculos para Equipe
+  const totalComissoesEquipe = professionals.reduce((acc, p) => {
+    return acc + budgets
+      .filter(b => b.professionalId === p.id && b.status === 'Pago')
+      .reduce((sum, b) => sum + (b.commissionValue || 0), 0);
+  }, 0);
+
   return (
     <Layout isAdmin={true}>
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-slate-800">Relatórios Gerais</h2>
-        <p className="text-slate-500">Visão consolidada e filtros de faturamento</p>
+        <p className="text-slate-500">Análise detalhada de faturamento, frota e desempenho da equipe</p>
       </div>
 
       <Tabs defaultValue="faturamento" className="w-full">
@@ -294,36 +301,74 @@ const Reports = () => {
         </TabsContent>
 
         <TabsContent value="professionals">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <Card className="border-l-4 border-l-blue-500">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-medium text-slate-500 uppercase">Total de Profissionais</CardTitle>
+                <Users className="text-blue-500" size={16} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{professionals.length}</div>
+              </CardContent>
+            </Card>
+            <Card className="border-l-4 border-l-green-500">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-medium text-slate-500 uppercase">Total Comissões Pagas</CardTitle>
+                <TrendingUp className="text-green-500" size={16} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{formatCurrency(totalComissoesEquipe)}</div>
+              </CardContent>
+            </Card>
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle>Relatório de Equipe e Comissões</CardTitle>
+              <CardTitle>Desempenho e Comissões por Profissional</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
+                    <TableHead>Profissional</TableHead>
                     <TableHead>Cargo</TableHead>
-                    <TableHead>Taxa (%)</TableHead>
-                    <TableHead className="text-right">Total Comissões</TableHead>
+                    <TableHead>Taxa de Comissão</TableHead>
+                    <TableHead>Serviços Concluídos</TableHead>
+                    <TableHead className="text-right">Total em Comissões</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {professionals.map((p) => {
-                    const totalComm = budgets
-                      .filter(b => b.professionalId === p.id && b.status === 'Pago')
-                      .reduce((acc, b) => acc + (b.commissionValue || 0), 0);
+                  {professionals.length > 0 ? professionals.map((p) => {
+                    const profBudgets = budgets.filter(b => b.professionalId === p.id && b.status === 'Pago');
+                    const totalComm = profBudgets.reduce((acc, b) => acc + (b.commissionValue || 0), 0);
+                    
                     return (
                       <TableRow key={p.id}>
-                        <TableCell className="font-bold">{p.name}</TableCell>
-                        <TableCell>{p.role}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 font-bold text-xs">
+                              {p.name.charAt(0)}
+                            </div>
+                            <span className="font-bold">{p.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="font-normal">{p.role}</Badge>
+                        </TableCell>
                         <TableCell>{p.commissionRate}%</TableCell>
-                        <TableCell className="text-right text-green-600 font-bold">
+                        <TableCell>{profBudgets.length} OS</TableCell>
+                        <TableCell className="text-right font-bold text-green-600">
                           {formatCurrency(totalComm)}
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                  }) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-slate-400">
+                        Nenhum profissional cadastrado.
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
