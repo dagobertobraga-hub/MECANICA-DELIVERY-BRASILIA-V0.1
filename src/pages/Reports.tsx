@@ -8,12 +8,20 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, toUpperCase } from '@/lib/utils-format';
-import { FileText, Car, Calendar, UserCheck, DollarSign, Search, FilterX, Users, TrendingUp } from 'lucide-react';
+import { generateBudgetPDF } from '@/lib/pdf-generator';
+import { 
+  FileText, Car, Calendar, UserCheck, DollarSign, 
+  Search, FilterX, Users, TrendingUp, FileDown, 
+  MessageSquare, Edit2, Trash2, CheckCircle2, XCircle 
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { showSuccess } from '@/utils/toast';
 
 const Reports = () => {
-  const { budgets, vehicles, schedules, professionals } = useStorage();
+  const { budgets, setBudgets, vehicles, setVehicles, schedules, setSchedules, professionals } = useStorage();
+  const navigate = useNavigate();
 
-  // Estados dos filtros
+  // Estados dos filtros globais
   const [filterName, setFilterName] = useState('');
   const [filterPlate, setFilterPlate] = useState('');
   const [filterModel, setFilterModel] = useState('');
@@ -23,175 +31,151 @@ const Reports = () => {
   const [filterMaxKm, setFilterMaxKm] = useState('');
 
   const clearFilters = () => {
-    setFilterName('');
-    setFilterPlate('');
-    setFilterModel('');
-    setFilterDateStart('');
-    setFilterDateEnd('');
-    setFilterMinKm('');
-    setFilterMaxKm('');
+    setFilterName(''); setFilterPlate(''); setFilterModel('');
+    setFilterDateStart(''); setFilterDateEnd('');
+    setFilterMinKm(''); setFilterMaxKm('');
   };
 
-  // Lógica de filtragem para Faturamento
-  const filteredFaturamento = useMemo(() => {
-    return budgets.filter(b => {
-      if (b.status !== 'Pago') return false;
-
-      const vehicle = vehicles.find(v => v.plate === b.vehiclePlate);
+  // Função genérica de filtragem
+  const applyFilters = (data: any[], dateKey: string = 'createdAt', plateKey: string = 'vehiclePlate', nameKey: string = 'clientName') => {
+    return data.filter(item => {
+      const vehicle = vehicles.find(v => v.plate === item[plateKey]);
       
-      const matchesName = b.clientName.toLowerCase().includes(filterName.toLowerCase());
-      const matchesPlate = b.vehiclePlate.toLowerCase().includes(filterPlate.toLowerCase());
+      const matchesName = item[nameKey]?.toLowerCase().includes(filterName.toLowerCase());
+      const matchesPlate = item[plateKey]?.toLowerCase().includes(filterPlate.toLowerCase());
       const matchesModel = vehicle ? vehicle.model.toLowerCase().includes(filterModel.toLowerCase()) : true;
       
-      const budgetDate = new Date(b.createdAt);
-      const matchesDateStart = filterDateStart ? budgetDate >= new Date(filterDateStart) : true;
-      const matchesDateEnd = filterDateEnd ? budgetDate <= new Date(filterDateEnd) : true;
+      const itemDate = new Date(item[dateKey]);
+      const matchesDateStart = filterDateStart ? itemDate >= new Date(filterDateStart) : true;
+      const matchesDateEnd = filterDateEnd ? itemDate <= new Date(filterDateEnd) : true;
       
-      const matchesMinKm = filterMinKm ? b.km >= Number(filterMinKm) : true;
-      const matchesMaxKm = filterMaxKm ? b.km <= Number(filterMaxKm) : true;
+      const kmValue = item.km || vehicle?.currentKm || 0;
+      const matchesMinKm = filterMinKm ? kmValue >= Number(filterMinKm) : true;
+      const matchesMaxKm = filterMaxKm ? kmValue <= Number(filterMaxKm) : true;
 
       return matchesName && matchesPlate && matchesModel && matchesDateStart && matchesDateEnd && matchesMinKm && matchesMaxKm;
     });
-  }, [budgets, vehicles, filterName, filterPlate, filterModel, filterDateStart, filterDateEnd, filterMinKm, filterMaxKm]);
+  };
 
-  const totalFaturado = filteredFaturamento.reduce((acc, b) => 
+  const filteredBudgets = useMemo(() => applyFilters(budgets), [budgets, vehicles, filterName, filterPlate, filterModel, filterDateStart, filterDateEnd, filterMinKm, filterMaxKm]);
+  const filteredVehicles = useMemo(() => applyFilters(vehicles, 'id', 'plate', 'clientName'), [vehicles, filterName, filterPlate, filterModel, filterDateStart, filterDateEnd, filterMinKm, filterMaxKm]);
+  const filteredSchedules = useMemo(() => applyFilters(schedules, 'date', 'vehiclePlate', 'clientName'), [schedules, vehicles, filterName, filterPlate, filterModel, filterDateStart, filterDateEnd, filterMinKm, filterMaxKm]);
+
+  const totalFaturado = filteredBudgets.filter(b => b.status === 'Pago').reduce((acc, b) => 
     acc + b.items.reduce((sum, i) => sum + (i.quantity * i.unitValue), 0), 0
   );
 
-  // Cálculos para Equipe
-  const totalComissoesEquipe = professionals.reduce((acc, p) => {
-    return acc + budgets
-      .filter(b => b.professionalId === p.id && b.status === 'Pago')
-      .reduce((sum, b) => sum + (b.commissionValue || 0), 0);
-  }, 0);
+  // Ações
+  const handleDownloadPDF = (budget: any) => {
+    const doc = generateBudgetPDF(budget);
+    doc.save(`orcamento_${budget.number}.pdf`);
+  };
+
+  const handleWhatsApp = (phone: string, message: string) => {
+    window.open(`https://wa.me/55${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+  };
 
   return (
     <Layout isAdmin={true}>
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-slate-800">Relatórios Gerais</h2>
-        <p className="text-slate-500">Análise detalhada de faturamento, frota e desempenho da equipe</p>
+        <h2 className="text-3xl font-bold text-slate-800">Relatórios e Gestão</h2>
+        <p className="text-slate-500">Filtre, analise e gerencie todos os dados do sistema</p>
       </div>
+
+      {/* Filtros Globais */}
+      <Card className="mb-8 border-blue-100 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-bold flex items-center gap-2 text-blue-700 uppercase">
+            <Search size={18} /> Filtros de Busca Avançada
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">Cliente</label>
+              <Input placeholder="NOME..." value={filterName} onChange={e => setFilterName(toUpperCase(e.target.value))} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">Placa</label>
+              <Input placeholder="ABC1D23" value={filterPlate} onChange={e => setFilterPlate(toUpperCase(e.target.value))} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">Modelo</label>
+              <Input placeholder="EX: COROLLA" value={filterModel} onChange={e => setFilterModel(toUpperCase(e.target.value))} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">Data Início</label>
+              <Input type="date" value={filterDateStart} onChange={e => setFilterDateStart(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">Data Fim</label>
+              <Input type="date" value={filterDateEnd} onChange={e => setFilterDateEnd(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">KM Mínimo</label>
+              <Input type="number" placeholder="0" value={filterMinKm} onChange={e => setFilterMinKm(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">KM Máximo</label>
+              <Input type="number" placeholder="999999" value={filterMaxKm} onChange={e => setFilterMaxKm(e.target.value)} />
+            </div>
+            <div className="flex items-end">
+              <Button variant="outline" onClick={clearFilters} className="w-full border-slate-200 text-slate-500 hover:bg-slate-50">
+                <FilterX className="mr-2" size={16} /> Limpar Filtros
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="faturamento" className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-8">
-          <TabsTrigger value="faturamento" className="flex gap-2">
-            <DollarSign size={18} /> Faturamento
-          </TabsTrigger>
-          <TabsTrigger value="budgets" className="flex gap-2">
-            <FileText size={18} /> Orçamentos
-          </TabsTrigger>
-          <TabsTrigger value="vehicles" className="flex gap-2">
-            <Car size={18} /> Veículos
-          </TabsTrigger>
-          <TabsTrigger value="schedules" className="flex gap-2">
-            <Calendar size={18} /> Agendamentos
-          </TabsTrigger>
-          <TabsTrigger value="professionals" className="flex gap-2">
-            <UserCheck size={18} /> Equipe
-          </TabsTrigger>
+          <TabsTrigger value="faturamento" className="flex gap-2"><DollarSign size={16} /> Faturamento</TabsTrigger>
+          <TabsTrigger value="budgets" className="flex gap-2"><FileText size={16} /> Orçamentos</TabsTrigger>
+          <TabsTrigger value="vehicles" className="flex gap-2"><Car size={16} /> Veículos</TabsTrigger>
+          <TabsTrigger value="schedules" className="flex gap-2"><Calendar size={16} /> Agendamentos</TabsTrigger>
+          <TabsTrigger value="professionals" className="flex gap-2"><UserCheck size={16} /> Equipe</TabsTrigger>
         </TabsList>
 
         <TabsContent value="faturamento">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Search size={20} className="text-blue-600" /> Filtros de Faturamento
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Nome do Cliente</label>
-                  <Input placeholder="BUSCAR NOME..." value={filterName} onChange={e => setFilterName(toUpperCase(e.target.value))} />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Placa</label>
-                  <Input placeholder="ABC1D23" value={filterPlate} onChange={e => setFilterPlate(toUpperCase(e.target.value))} />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Modelo</label>
-                  <Input placeholder="EX: COROLLA" value={filterModel} onChange={e => setFilterModel(toUpperCase(e.target.value))} />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Data Início</label>
-                  <Input type="date" value={filterDateStart} onChange={e => setFilterDateStart(e.target.value)} />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Data Fim</label>
-                  <Input type="date" value={filterDateEnd} onChange={e => setFilterDateEnd(e.target.value)} />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">KM Mínimo</label>
-                  <Input type="number" placeholder="0" value={filterMinKm} onChange={e => setFilterMinKm(e.target.value)} />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">KM Máximo</label>
-                  <Input type="number" placeholder="999999" value={filterMaxKm} onChange={e => setFilterMaxKm(e.target.value)} />
-                </div>
-                <div className="flex items-end">
-                  <Button variant="outline" onClick={clearFilters} className="w-full border-slate-200 text-slate-500">
-                    <FilterX className="mr-2" size={16} /> Limpar Filtros
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <Card className="bg-blue-600 text-white">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-medium uppercase opacity-80">Total Faturado (Filtrado)</CardTitle>
-              </CardHeader>
+            <Card className="bg-blue-600 text-white shadow-lg shadow-blue-100">
+              <CardHeader className="pb-2"><CardTitle className="text-xs font-medium uppercase opacity-80">Total Faturado (Filtrado)</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-3xl font-black">{formatCurrency(totalFaturado)}</div>
-                <p className="text-[10px] mt-1 opacity-70">{filteredFaturamento.length} orçamentos pagos encontrados</p>
+                <p className="text-[10px] mt-1 opacity-70">{filteredBudgets.filter(b => b.status === 'Pago').length} orçamentos pagos</p>
               </CardContent>
             </Card>
           </div>
-
           <Card>
-            <CardHeader>
-              <CardTitle>Detalhamento de Faturamento</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nº</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Veículo</TableHead>
-                    <TableHead>KM</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
+                    <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredFaturamento.length > 0 ? filteredFaturamento.map((b) => {
-                    const vehicle = vehicles.find(v => v.plate === b.vehiclePlate);
-                    return (
-                      <TableRow key={b.id}>
-                        <TableCell className="font-bold">#{b.number}</TableCell>
-                        <TableCell>{b.clientName}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-bold">{b.vehiclePlate}</span>
-                            <span className="text-[10px] text-slate-500">{vehicle?.model || 'N/A'}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{b.km.toLocaleString()} KM</TableCell>
-                        <TableCell>{new Date(b.createdAt).toLocaleDateString('pt-BR')}</TableCell>
-                        <TableCell className="text-right font-bold text-green-600">
-                          {formatCurrency(b.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0))}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  }) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-slate-400">
-                        Nenhum faturamento encontrado com os filtros aplicados.
+                  {filteredBudgets.filter(b => b.status === 'Pago').map((b) => (
+                    <TableRow key={b.id}>
+                      <TableCell className="font-bold">#{b.number}</TableCell>
+                      <TableCell>{b.clientName}</TableCell>
+                      <TableCell>{b.vehiclePlate}</TableCell>
+                      <TableCell>{new Date(b.createdAt).toLocaleDateString('pt-BR')}</TableCell>
+                      <TableCell className="text-right font-bold text-green-600">{formatCurrency(b.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0))}</TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex justify-center gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleDownloadPDF(b)}><FileDown size={16} /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => navigate('/budgets')}><Edit2 size={16} /></Button>
+                        </div>
                       </TableCell>
                     </TableRow>
-                  )}
+                  ))}
                 </TableBody>
               </Table>
             </CardContent>
@@ -200,33 +184,32 @@ const Reports = () => {
 
         <TabsContent value="budgets">
           <Card>
-            <CardHeader>
-              <CardTitle>Relatório de Orçamentos</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nº</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Placa</TableHead>
-                    <TableHead>Data</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {budgets.map((b) => (
+                  {filteredBudgets.map((b) => (
                     <TableRow key={b.id}>
                       <TableCell className="font-bold">#{b.number}</TableCell>
                       <TableCell>{b.clientName}</TableCell>
                       <TableCell>{b.vehiclePlate}</TableCell>
-                      <TableCell>{new Date(b.createdAt).toLocaleDateString('pt-BR')}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{b.status}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-bold">
-                        {formatCurrency(b.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0))}
+                      <TableCell><Badge variant="outline">{b.status}</Badge></TableCell>
+                      <TableCell className="text-right font-bold">{formatCurrency(b.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0))}</TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex justify-center gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleDownloadPDF(b)}><FileDown size={16} /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleWhatsApp(b.clientPhone, `Olá ${b.clientName}! Segue seu orçamento #${b.number}.`)} className="text-green-600"><MessageSquare size={16} /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => navigate('/budgets')}><Edit2 size={16} /></Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -238,10 +221,7 @@ const Reports = () => {
 
         <TabsContent value="vehicles">
           <Card>
-            <CardHeader>
-              <CardTitle>Relatório de Veículos</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -249,17 +229,22 @@ const Reports = () => {
                     <TableHead>Modelo</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>KM Atual</TableHead>
-                    <TableHead>Última Troca Óleo</TableHead>
+                    <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {vehicles.map((v) => (
+                  {filteredVehicles.map((v) => (
                     <TableRow key={v.id}>
                       <TableCell className="font-bold">{v.plate}</TableCell>
                       <TableCell>{v.model}</TableCell>
                       <TableCell>{v.clientName}</TableCell>
                       <TableCell>{v.currentKm.toLocaleString()} KM</TableCell>
-                      <TableCell>{v.lastOilChangeKm.toLocaleString()} KM</TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex justify-center gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleWhatsApp(v.clientPhone, `Olá ${v.clientName}! Como está seu ${v.model}?`)} className="text-green-600"><MessageSquare size={16} /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => navigate('/vehicles')}><Edit2 size={16} /></Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -270,10 +255,7 @@ const Reports = () => {
 
         <TabsContent value="schedules">
           <Card>
-            <CardHeader>
-              <CardTitle>Relatório de Agendamentos</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -281,16 +263,26 @@ const Reports = () => {
                     <TableHead>Cliente</TableHead>
                     <TableHead>Placa</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {schedules.map((s) => (
+                  {filteredSchedules.map((s) => (
                     <TableRow key={s.id}>
                       <TableCell>{new Date(s.date).toLocaleDateString('pt-BR')} às {s.time}</TableCell>
                       <TableCell>{s.clientName}</TableCell>
                       <TableCell>{s.vehiclePlate}</TableCell>
-                      <TableCell>
-                        <Badge>{s.status}</Badge>
+                      <TableCell><Badge>{s.status}</Badge></TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex justify-center gap-1">
+                          {s.status === 'Pendente' && (
+                            <Button variant="ghost" size="icon" className="text-green-600" onClick={() => {
+                              setSchedules(schedules.map(x => x.id === s.id ? {...x, status: 'Confirmado'} : x));
+                              showSuccess('Confirmado!');
+                            }}><CheckCircle2 size={16} /></Button>
+                          )}
+                          <Button variant="ghost" size="icon" onClick={() => navigate('/schedules')}><Edit2 size={16} /></Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -307,68 +299,36 @@ const Reports = () => {
                 <CardTitle className="text-xs font-medium text-slate-500 uppercase">Total de Profissionais</CardTitle>
                 <Users className="text-blue-500" size={16} />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{professionals.length}</div>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-l-green-500">
-              <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                <CardTitle className="text-xs font-medium text-slate-500 uppercase">Total Comissões Pagas</CardTitle>
-                <TrendingUp className="text-green-500" size={16} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">{formatCurrency(totalComissoesEquipe)}</div>
-              </CardContent>
+              <CardContent><div className="text-2xl font-bold">{professionals.length}</div></CardContent>
             </Card>
           </div>
-
           <Card>
-            <CardHeader>
-              <CardTitle>Desempenho e Comissões por Profissional</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Profissional</TableHead>
                     <TableHead>Cargo</TableHead>
-                    <TableHead>Taxa de Comissão</TableHead>
-                    <TableHead>Serviços Concluídos</TableHead>
-                    <TableHead className="text-right">Total em Comissões</TableHead>
+                    <TableHead>Taxa</TableHead>
+                    <TableHead className="text-right">Comissões Pagas</TableHead>
+                    <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {professionals.length > 0 ? professionals.map((p) => {
-                    const profBudgets = budgets.filter(b => b.professionalId === p.id && b.status === 'Pago');
-                    const totalComm = profBudgets.reduce((acc, b) => acc + (b.commissionValue || 0), 0);
-                    
+                  {professionals.map((p) => {
+                    const totalComm = budgets.filter(b => b.professionalId === p.id && b.status === 'Pago').reduce((acc, b) => acc + (b.commissionValue || 0), 0);
                     return (
                       <TableRow key={p.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 font-bold text-xs">
-                              {p.name.charAt(0)}
-                            </div>
-                            <span className="font-bold">{p.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="font-normal">{p.role}</Badge>
-                        </TableCell>
+                        <TableCell className="font-bold">{p.name}</TableCell>
+                        <TableCell>{p.role}</TableCell>
                         <TableCell>{p.commissionRate}%</TableCell>
-                        <TableCell>{profBudgets.length} OS</TableCell>
-                        <TableCell className="text-right font-bold text-green-600">
-                          {formatCurrency(totalComm)}
+                        <TableCell className="text-right font-bold text-green-600">{formatCurrency(totalComm)}</TableCell>
+                        <TableCell className="text-center">
+                          <Button variant="ghost" size="icon" onClick={() => navigate('/professionals')}><Edit2 size={16} /></Button>
                         </TableCell>
                       </TableRow>
                     );
-                  }) : (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-slate-400">
-                        Nenhum profissional cadastrado.
-                      </TableCell>
-                    </TableRow>
-                  )}
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
