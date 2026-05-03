@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Trash2, Wrench, MessageSquare, TrendingUp, Calendar, Info } from 'lucide-react';
+import { Plus, Search, Trash2, Wrench, MessageSquare, TrendingUp, Calendar, Info, UserPlus } from 'lucide-react';
 import { Vehicle, MaintenanceRecord } from '@/lib/types';
 import { formatCurrency, toUpperCase } from '@/lib/utils-format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -29,6 +29,9 @@ const Vehicles = () => {
     description: '', km: 0, value: 0, type: 'Outros', date: new Date().toISOString().split('T')[0]
   });
 
+  // Extrair lista única de clientes para o seletor
+  const uniqueClients = Array.from(new Set(vehicles.map(v => v.clientName))).sort();
+
   const handleSaveVehicle = () => {
     const newVehicle: Vehicle = {
       id: Math.random().toString(36).substr(2, 9),
@@ -45,6 +48,7 @@ const Vehicles = () => {
     };
     setVehicles([...vehicles, newVehicle]);
     setIsVehicleModalOpen(false);
+    setVehicleForm({ plate: '', model: '', clientName: '', clientPhone: '', currentKm: 0, oilIntervalKm: 10000, avgKmMonth: 1000 });
     showSuccess('Veículo cadastrado!');
   };
 
@@ -70,6 +74,17 @@ const Vehicles = () => {
     }
   };
 
+  const handleSelectExistingClient = (name: string) => {
+    const existing = vehicles.find(v => v.clientName === name);
+    if (existing) {
+      setVehicleForm({
+        ...vehicleForm,
+        clientName: existing.clientName,
+        clientPhone: existing.clientPhone
+      });
+    }
+  };
+
   const filteredVehicles = vehicles.filter(v => 
     v.plate.toLowerCase().includes(searchTerm.toLowerCase()) || 
     v.clientName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -84,18 +99,47 @@ const Vehicles = () => {
         </div>
         <Dialog open={isVehicleModalOpen} onOpenChange={setIsVehicleModalOpen}>
           <DialogTrigger asChild><Button className="bg-blue-600"><Plus className="mr-2" /> Novo Veículo</Button></DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader><DialogTitle>Cadastrar Veículo</DialogTitle></DialogHeader>
             <div className="space-y-4 mt-4">
-              <Input placeholder="PLACA" value={vehicleForm.plate} onChange={e => setVehicleForm({...vehicleForm, plate: e.target.value})} />
-              <Input placeholder="MODELO" value={vehicleForm.model} onChange={e => setVehicleForm({...vehicleForm, model: e.target.value})} />
-              <Input placeholder="CLIENTE" value={vehicleForm.clientName} onChange={e => setVehicleForm({...vehicleForm, clientName: e.target.value})} />
-              <Input placeholder="WHATSAPP" value={vehicleForm.clientPhone} onChange={e => setVehicleForm({...vehicleForm, clientPhone: e.target.value})} />
-              <div className="grid grid-cols-2 gap-2">
-                <Input type="number" placeholder="KM ATUAL" value={vehicleForm.currentKm} onChange={e => setVehicleForm({...vehicleForm, currentKm: Number(e.target.value)})} />
-                <Input type="number" placeholder="KM/MÊS (MÉDIA)" value={vehicleForm.avgKmMonth} onChange={e => setVehicleForm({...vehicleForm, avgKmMonth: Number(e.target.value)})} />
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase">Selecionar Cliente Existente</label>
+                <Select onValueChange={handleSelectExistingClient}>
+                  <SelectTrigger className="bg-slate-50 border-blue-100">
+                    <SelectValue placeholder="BUSCAR CLIENTE CADASTRADO..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {uniqueClients.map(client => (
+                      <SelectItem key={client} value={client}>{client}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <Button onClick={handleSaveVehicle} className="w-full bg-blue-600">Salvar</Button>
+
+              <div className="relative py-2">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-slate-400">Ou preencha manualmente</span></div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                <Input placeholder="NOME DO CLIENTE" value={vehicleForm.clientName} onChange={e => setVehicleForm({...vehicleForm, clientName: toUpperCase(e.target.value)})} />
+                <Input placeholder="WHATSAPP" value={vehicleForm.clientPhone} onChange={e => setVehicleForm({...vehicleForm, clientPhone: e.target.value})} />
+                <div className="grid grid-cols-2 gap-2">
+                  <Input placeholder="PLACA" value={vehicleForm.plate} onChange={e => setVehicleForm({...vehicleForm, plate: toUpperCase(e.target.value)})} className="font-mono" />
+                  <Input placeholder="MODELO" value={vehicleForm.model} onChange={e => setVehicleForm({...vehicleForm, model: toUpperCase(e.target.value)})} />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">KM Atual</label>
+                    <Input type="number" value={vehicleForm.currentKm} onChange={e => setVehicleForm({...vehicleForm, currentKm: Number(e.target.value)})} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Média KM/Mês</label>
+                    <Input type="number" value={vehicleForm.avgKmMonth} onChange={e => setVehicleForm({...vehicleForm, avgKmMonth: Number(e.target.value)})} />
+                  </div>
+                </div>
+              </div>
+              <Button onClick={handleSaveVehicle} className="w-full bg-blue-600 h-12 font-bold">Salvar Veículo</Button>
             </div>
           </DialogContent>
         </Dialog>
