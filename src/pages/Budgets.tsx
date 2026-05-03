@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, UserCheck, Car } from 'lucide-react';
+import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, UserCheck, Car, AlertCircle } from 'lucide-react';
 import { Budget, BudgetItem, BudgetStatus } from '@/lib/types';
 import { formatCurrency, toUpperCase } from '@/lib/utils-format';
 import { generateBudgetPDF } from '@/lib/pdf-generator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { showSuccess } from '@/utils/toast';
+import { showError, showSuccess } from '@/utils/toast';
 import PDFImportDialog from '@/components/PDFImportDialog';
 
 const Budgets = () => {
@@ -44,6 +44,13 @@ const Budgets = () => {
   };
 
   const handleSave = () => {
+    // Validação de KM
+    const vehicle = vehicles.find(v => v.plate === formData.vehiclePlate);
+    if (vehicle && (formData.km || 0) < vehicle.currentKm) {
+      showError(`A quilometragem não pode ser inferior à atual do veículo (${vehicle.currentKm.toLocaleString()} KM).`);
+      return;
+    }
+
     const totals = calculateTotals(formData.items || []);
     const prof = professionals.find(p => p.id === formData.professionalId);
     const commission = prof ? (totals.services * (prof.commissionRate / 100)) : 0;
@@ -149,6 +156,8 @@ const Budgets = () => {
     return colors[status];
   };
 
+  const currentVehicle = vehicles.find(v => v.plate === formData.vehiclePlate);
+
   return (
     <Layout isAdmin={true}>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -205,7 +214,17 @@ const Budgets = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Quilometragem</label>
-                  <Input type="number" value={formData.km} onChange={e => setFormData({...formData, km: Number(e.target.value)})} />
+                  <Input 
+                    type="number" 
+                    value={formData.km} 
+                    onChange={e => setFormData({...formData, km: Number(e.target.value)})} 
+                    className={currentVehicle && (formData.km || 0) < currentVehicle.currentKm ? "border-red-500 focus-visible:ring-red-500" : ""}
+                  />
+                  {currentVehicle && (formData.km || 0) < currentVehicle.currentKm && (
+                    <p className="text-[10px] text-red-500 font-bold flex items-center gap-1">
+                      <AlertCircle size={12} /> KM inferior ao atual ({currentVehicle.currentKm.toLocaleString()})
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Profissional Responsável</label>
