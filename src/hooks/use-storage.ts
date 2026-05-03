@@ -20,7 +20,7 @@ const generateMockData = () => {
   // Criar 106 veículos distribuídos entre os 40 clientes
   for (let i = 0; i < 106; i++) {
     const clientIndex = i % clients.length;
-    const plate = `BRA${i}X${Math.floor(Math.random() * 99)}`;
+    const plate = `BRA${i}X${Math.floor(10 + Math.random() * 89)}`; // Garantindo 2 dígitos no final para manter padrão
     const km = Math.floor(Math.random() * 150000) + 5000;
     
     vehicles.push({
@@ -43,7 +43,8 @@ const generateMockData = () => {
 export function useStorage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>(() => {
     const saved = localStorage.getItem('mecanica_vehicles');
-    return saved ? JSON.parse(saved) : generateMockData();
+    const parsed = saved ? JSON.parse(saved) : [];
+    return parsed.length > 0 ? parsed : generateMockData();
   });
 
   const [budgets, setBudgets] = useState<Budget[]>(() => {
@@ -64,8 +65,8 @@ export function useStorage() {
   const [professionals, setProfessionals] = useState<Professional[]>(() => {
     const saved = localStorage.getItem('mecanica_professionals');
     return saved ? JSON.parse(saved) : [
-      { id: 'p1', name: 'DAGOBERTO BRAGA', role: 'Mecânico Master', commissionRate: 10 },
-      { id: 'p2', name: 'RICARDO SILVA', role: 'Auxiliar Técnico', commissionRate: 5 }
+      { id: 'p1', name: 'DAGOBERTO BRAGA', role: 'MECÂNICO MASTER', commissionRate: 10 },
+      { id: 'p2', name: 'RICARDO SILVA', role: 'AUXILIAR TÉCNICO', commissionRate: 5 }
     ];
   });
 
