@@ -9,6 +9,7 @@ import Vehicles from "./pages/Vehicles";
 import Admins from "./pages/Admins";
 import Schedules from "./pages/Schedules";
 import Professionals from "./pages/Professionals";
+import Reports from "./pages/Reports";
 import ClientLogin from "./pages/ClientLogin";
 import ClientDashboard from "./pages/ClientDashboard";
 import NotFound from "./pages/NotFound";
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/admins" element={<Admins />} />
           <Route path="/schedules" element={<Schedules />} />
           <Route path="/professionals" element={<Professionals />} />
+          <Route path="/reports" element={<Reports />} />
           <Route path="/login" element={<ClientLogin />} />
           <Route path="/client-dashboard" element={<ClientDashboard />} />
           <Route path="*" element={<NotFound />} />
