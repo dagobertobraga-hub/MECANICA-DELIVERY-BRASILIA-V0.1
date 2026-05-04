@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Budget, BudgetItem } from './types';
+import { Budget } from './types';
 import { formatCurrency } from './utils-format';
 
 export const generateBudgetPDF = (budget: Budget) => {
@@ -49,6 +49,8 @@ export const generateBudgetPDF = (budget: Budget) => {
         formatCurrency(p.unitValue),
         formatCurrency(p.quantity * p.unitValue)
       ]),
+      styles: { fontSize: 9, cellPadding: 2 },
+      columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 15 }, 2: { cellWidth: 30 }, 3: { cellWidth: 30 } }
     });
     currentY = (doc as any).lastAutoTable.finalY + 10;
   }
@@ -64,6 +66,8 @@ export const generateBudgetPDF = (budget: Budget) => {
         formatCurrency(s.unitValue),
         formatCurrency(s.quantity * s.unitValue)
       ]),
+      styles: { fontSize: 9, cellPadding: 2 },
+      columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 15 }, 2: { cellWidth: 30 }, 3: { cellWidth: 30 } }
     });
     currentY = (doc as any).lastAutoTable.finalY + 10;
   }

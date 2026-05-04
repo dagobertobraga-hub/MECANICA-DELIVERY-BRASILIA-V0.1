@@ -139,7 +139,7 @@ const Budgets = () => {
           <PDFImportDialog onImport={handleImportPDF} />
           <Dialog open={isModalOpen} onOpenChange={(open) => { setIsModalOpen(open); if (!open) { setEditingBudget(null); setFormData({ status: 'Aberto', items: [] }); } }}>
             <DialogTrigger asChild><Button className="bg-blue-600"><Plus className="mr-2" /> Novo Orçamento</Button></DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>{editingBudget ? 'Editar Orçamento' : 'Novo Orçamento'}</DialogTitle></DialogHeader>
               {!editingBudget && (
                 <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
@@ -251,11 +251,16 @@ const Budgets = () => {
                   </div>
                 </div>
                 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {formData.items?.map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border">
-                      <div><p className="font-medium">{item.description}</p><p className="text-xs text-slate-500">{item.type} | {item.quantity}x {formatCurrency(item.unitValue)}</p></div>
-                      <div className="flex items-center gap-4"><p className="font-bold">{formatCurrency(item.quantity * item.unitValue)}</p><Button variant="ghost" size="icon" onClick={() => removeItem(item.id)} className="text-red-500"><Trash2 size={18} /></Button></div>
+                    <div key={item.id} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg border text-sm">
+                      <div className="flex-1 grid grid-cols-12 gap-2 items-center">
+                        <span className="col-span-6 font-bold truncate">{item.description}</span>
+                        <span className="col-span-2 text-slate-500 text-xs">{item.type}</span>
+                        <span className="col-span-2 text-center">{item.quantity}x {formatCurrency(item.unitValue)}</span>
+                        <span className="col-span-2 text-right font-black text-blue-700">{formatCurrency(item.quantity * item.unitValue)}</span>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)} className="text-red-500 ml-2 h-8 w-8"><Trash2 size={14} /></Button>
                     </div>
                   ))}
                 </div>
