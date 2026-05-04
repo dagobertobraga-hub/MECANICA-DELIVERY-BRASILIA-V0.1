@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, Car, Users, LogOut, Menu, X, Calendar, UserCheck, BarChart3, MessageCircle } from 'lucide-react';
+import { LayoutDashboard, FileText, Car, Users, LogOut, Menu, X, Calendar, UserCheck, BarChart3, MessageCircle, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { useStorage } from '@/hooks/use-storage';
@@ -47,8 +47,14 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+      {/* Mobile Header */}
       <div className="md:hidden bg-white border-b p-4 flex justify-between items-center sticky top-0 z-50">
-        <h1 className="font-black text-blue-600 tracking-tighter">MECÂNICA DELIVERY</h1>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-8 w-8">
+            <ArrowLeft size={20} />
+          </Button>
+          <h1 className="font-black text-blue-600 tracking-tighter">MECÂNICA DELIVERY</h1>
+        </div>
         <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
           {isMenuOpen ? <X /> : <Menu />}
         </Button>
@@ -59,7 +65,13 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
         isMenuOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="p-6 flex flex-col h-full">
-          <h1 className="text-xl font-black text-blue-700 mb-8 hidden md:block tracking-tighter">MECÂNICA DELIVERY</h1>
+          <div className="flex items-center gap-2 mb-8 hidden md:flex">
+            <Button variant="outline" size="icon" onClick={() => navigate(-1)} className="h-8 w-8 border-slate-200 text-slate-400 hover:text-blue-600">
+              <ArrowLeft size={16} />
+            </Button>
+            <h1 className="text-xl font-black text-blue-700 tracking-tighter">MECÂNICA DELIVERY</h1>
+          </div>
+          
           <nav className="space-y-2 flex-1">
             {navItems.map((item) => (
               <Link
