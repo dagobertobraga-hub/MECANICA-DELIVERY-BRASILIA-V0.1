@@ -5,13 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Trash2, Wrench, MessageSquare, TrendingUp, Calendar, Info, UserPlus } from 'lucide-react';
+import { Plus, Search, Trash2, Wrench, MessageSquare, Check, ChevronsUpDown } from 'lucide-react';
 import { Vehicle, MaintenanceRecord } from '@/lib/types';
 import { formatCurrency, toUpperCase, formatPlate } from '@/lib/utils-format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { showSuccess } from '@/utils/toast';
-import { REVISION_PLANS, getNextRevision, calculateUsagePrediction } from '@/lib/maintenance-logic';
+import { getNextRevision, calculateUsagePrediction } from '@/lib/maintenance-logic';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -21,6 +23,7 @@ const Vehicles = () => {
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [openSearchClient, setOpenSearchClient] = useState(false);
   const OFFICE_PHONE = "5561991386470";
 
   const [vehicleForm, setVehicleForm] = useState<Partial<Vehicle>>({
@@ -83,6 +86,7 @@ const Vehicles = () => {
         clientName: existing.clientName,
         clientPhone: existing.clientPhone
       });
+      setOpenSearchClient(false);
     }
   };
 
@@ -105,16 +109,44 @@ const Vehicles = () => {
             <div className="space-y-4 mt-4">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-500 uppercase">Selecionar Cliente Existente</label>
-                <Select onValueChange={handleSelectExistingClient}>
-                  <SelectTrigger className="bg-slate-50 border-blue-100">
-                    <SelectValue placeholder="BUSCAR CLIENTE CADASTRADO..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {uniqueClients.map(client => (
-                      <SelectItem key={client} value={client}>{client}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={openSearchClient} onOpenChange={setOpenSearchClient}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openSearchClient}
+                      className="w-full justify-between bg-slate-50 border-blue-100"
+                    >
+                      {vehicleForm.clientName || "BUSCAR CLIENTE CADASTRADO..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                    <Command>
+                      <CommandInput placeholder="Digite o nome do cliente..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {uniqueClients.map((client) => (
+                            <CommandItem
+                              key={client}
+                              value={client}
+                              onSelect={() => handleSelectExistingClient(client)}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  vehicleForm.clientName === client ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {client}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="relative py-2">

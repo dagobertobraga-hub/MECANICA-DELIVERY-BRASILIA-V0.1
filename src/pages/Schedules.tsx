@@ -5,15 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Trash2, CheckCircle, XCircle, Plus } from 'lucide-react';
+import { Calendar, Trash2, CheckCircle, XCircle, Plus, Check, ChevronsUpDown } from 'lucide-react';
 import { Schedule } from '@/lib/types';
 import { showSuccess } from '@/utils/toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from '@/lib/utils';
 
 const Schedules = () => {
-  const { schedules, setSchedules } = useStorage();
+  const { schedules, setSchedules, vehicles } = useStorage();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [openSearchVehicle, setOpenSearchVehicle] = useState(false);
   const [formData, setFormData] = useState<Partial<Schedule>>({
     clientName: '',
     vehiclePlate: '',
@@ -34,6 +37,18 @@ const Schedules = () => {
     }
   };
 
+  const handleSelectVehicle = (vehicleId: string) => {
+    const v = vehicles.find(veh => veh.id === vehicleId);
+    if (v) {
+      setFormData({
+        ...formData,
+        clientName: v.clientName,
+        vehiclePlate: v.plate
+      });
+      setOpenSearchVehicle(false);
+    }
+  };
+
   const handleSave = () => {
     const newSchedule: Schedule = {
       id: Math.random().toString(36).substr(2, 9),
@@ -46,7 +61,7 @@ const Schedules = () => {
     };
     setSchedules([newSchedule, ...schedules]);
     setIsModalOpen(false);
-    setFormData({ status: 'Confirmado' });
+    setFormData({ status: 'Confirmado', clientName: '', vehiclePlate: '', date: '', time: '' });
     showSuccess('Agendamento criado com sucesso!');
   };
 
@@ -68,13 +83,67 @@ const Schedules = () => {
               <DialogTitle>Novo Agendamento</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
-              <Input placeholder="NOME DO CLIENTE" value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} />
-              <Input placeholder="PLACA" value={formData.vehiclePlate} onChange={e => setFormData({...formData, vehiclePlate: e.target.value})} />
-              <div className="grid grid-cols-2 gap-2">
-                <Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
-                <Input type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} />
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase">Buscar Veículo/Cliente</label>
+                <Popover open={openSearchVehicle} onOpenChange={setOpenSearchVehicle}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openSearchVehicle}
+                      className="w-full justify-between bg-slate-50"
+                    >
+                      {formData.vehiclePlate ? `${formData.vehiclePlate} - ${formData.clientName}` : "PESQUISAR POR PLACA OU NOME..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                    <Command>
+                      <CommandInput placeholder="Digite a placa ou nome..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum veículo encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {vehicles.map((v) => (
+                            <CommandItem
+                              key={v.id}
+                              value={`${v.plate} ${v.clientName}`}
+                              onSelect={() => handleSelectVehicle(v.id)}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.vehiclePlate === v.plate ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <span className="font-bold mr-2">{v.plate}</span>
+                              <span className="text-slate-500">{v.clientName}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
-              <Button onClick={handleSave} className="w-full bg-blue-600">Salvar Agendamento</Button>
+
+              <div className="relative py-2">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-slate-400">Ou preencha manualmente</span></div>
+              </div>
+
+              <Input placeholder="NOME DO CLIENTE" value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value.toUpperCase()})} />
+              <Input placeholder="PLACA" value={formData.vehiclePlate} onChange={e => setFormData({...formData, vehiclePlate: e.target.value.toUpperCase()})} />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Data</label>
+                  <Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Hora</label>
+                  <Input type="time" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} />
+                </div>
+              </div>
+              <Button onClick={handleSave} className="w-full bg-blue-600 h-12 font-bold">Salvar Agendamento</Button>
             </div>
           </DialogContent>
         </Dialog>
