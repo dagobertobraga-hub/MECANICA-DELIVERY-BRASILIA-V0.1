@@ -67,22 +67,33 @@ const Index = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="border-l-4 border-l-blue-500">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-medium text-slate-500 uppercase">Faturamento Total</CardTitle></CardHeader>
-          <CardContent><div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div></CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-green-500">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-medium text-slate-500 uppercase">Receita Mensal</CardTitle></CardHeader>
-          <CardContent><div className="text-2xl font-bold">{formatCurrency(monthlyRevenue)}</div></CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-amber-500">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-medium text-slate-500 uppercase">Orçamentos Abertos</CardTitle></CardHeader>
-          <CardContent><div className="text-2xl font-bold">{pendingBudgets}</div></CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-red-500">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-medium text-slate-500 uppercase">Manutenções Vencidas</CardTitle></CardHeader>
-          <CardContent><div className="text-2xl font-bold">{overdueMaintenance}</div></CardContent>
-        </Card>
+        <Link to="/reports?tab=faturamento">
+          <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow cursor-pointer h-full">
+            <CardHeader className="pb-2"><CardTitle className="text-xs font-medium text-slate-500 uppercase">Faturamento Total</CardTitle></CardHeader>
+            <CardContent><div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div></CardContent>
+          </Card>
+        </Link>
+        
+        <Link to="/reports?tab=faturamento&filter=mes_atual">
+          <Card className="border-l-4 border-l-green-500 hover:shadow-md transition-shadow cursor-pointer h-full">
+            <CardHeader className="pb-2"><CardTitle className="text-xs font-medium text-slate-500 uppercase">Receita Mensal</CardTitle></CardHeader>
+            <CardContent><div className="text-2xl font-bold">{formatCurrency(monthlyRevenue)}</div></CardContent>
+          </Card>
+        </Link>
+
+        <Link to="/budgets?filter=pendentes">
+          <Card className="border-l-4 border-l-amber-500 hover:shadow-md transition-shadow cursor-pointer h-full">
+            <CardHeader className="pb-2"><CardTitle className="text-xs font-medium text-slate-500 uppercase">Orçamentos Abertos</CardTitle></CardHeader>
+            <CardContent><div className="text-2xl font-bold">{pendingBudgets}</div></CardContent>
+          </Card>
+        </Link>
+
+        <Link to="/vehicles?filter=vencidos">
+          <Card className="border-l-4 border-l-red-500 hover:shadow-md transition-shadow cursor-pointer h-full">
+            <CardHeader className="pb-2"><CardTitle className="text-xs font-medium text-slate-500 uppercase">Manutenções Vencidas</CardTitle></CardHeader>
+            <CardContent><div className="text-2xl font-bold">{overdueMaintenance}</div></CardContent>
+          </Card>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">

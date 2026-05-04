@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useStorage } from '@/hooks/use-storage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +15,7 @@ import {
   Search, FilterX, Users, TrendingUp, FileDown, 
   MessageSquare, Edit2, Trash2, CheckCircle2, Star, Plus
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { showSuccess } from '@/utils/toast';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -24,29 +24,35 @@ import { cn } from '@/lib/utils';
 const Reports = () => {
   const { budgets, setBudgets, vehicles, setVehicles, schedules, setSchedules, professionals, reviews, setReviews } = useStorage();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const OFFICE_PHONE = "5561991386470";
 
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'faturamento');
   const [filterName, setFilterName] = useState('');
   const [filterPlate, setFilterPlate] = useState('');
   const [filterModel, setFilterModel] = useState('');
-  const [filterDateStart, setFilterDateStart] = useState('');
-  const [filterDateEnd, setFilterDateEnd] = useState('');
+  const [filterDateStart, setFilterDateStart] = useState(searchParams.get('filter') === 'mes_atual' ? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0] : '');
+  const [filterDateEnd, setFilterDateEnd] = useState(searchParams.get('filter') === 'mes_atual' ? new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0] : '');
   const [filterMinKm, setFilterMinKm] = useState('');
   const [filterMaxKm, setFilterMaxKm] = useState('');
 
-  // Estado para nova avaliação manual
-  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [newReview, setNewReview] = useState({
-    clientName: '',
-    vehiclePlate: '',
-    rating: 5,
-    comment: ''
-  });
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) setActiveTab(tab);
+    
+    if (searchParams.get('filter') === 'mes_atual') {
+      const firstDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+      const lastDay = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
+      setFilterDateStart(firstDay);
+      setFilterDateEnd(lastDay);
+    }
+  }, [searchParams]);
 
   const clearFilters = () => {
     setFilterName(''); setFilterPlate(''); setFilterModel('');
     setFilterDateStart(''); setFilterDateEnd('');
     setFilterMinKm(''); setFilterMaxKm('');
+    setSearchParams({});
   };
 
   const applyFilters = (data: any[], dateKey: string = 'createdAt', plateKey: string = 'vehiclePlate', nameKey: string = 'clientName') => {
@@ -73,6 +79,15 @@ const Reports = () => {
   const totalFaturado = filteredBudgets.filter(b => b.status === 'Pago').reduce((acc, b) => 
     acc + b.items.reduce((sum, i) => sum + (i.quantity * i.unitValue), 0), 0
   );
+
+  // ... resto do componente (handleSaveManualReview, handleDownloadPDF, handleWhatsAppOffice) ...
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [newReview, setNewReview] = useState({
+    clientName: '',
+    vehiclePlate: '',
+    rating: 5,
+    comment: ''
+  });
 
   const handleSaveManualReview = () => {
     const review = {
@@ -151,7 +166,7 @@ const Reports = () => {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="faturamento" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 mb-8">
           <TabsTrigger value="faturamento" className="flex gap-2"><DollarSign size={16} /> Faturamento</TabsTrigger>
           <TabsTrigger value="budgets" className="flex gap-2"><FileText size={16} /> Orçamentos</TabsTrigger>
@@ -288,7 +303,6 @@ const Reports = () => {
           </Card>
         </TabsContent>
 
-        {/* ... manter as outras TabsContent (budgets, vehicles, schedules, professionals) ... */}
         <TabsContent value="budgets">
           <Card>
             <CardContent className="p-0">

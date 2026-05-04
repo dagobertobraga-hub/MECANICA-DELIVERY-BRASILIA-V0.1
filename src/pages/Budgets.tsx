@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useStorage } from '@/hooks/use-storage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, Check, ChevronsUpDown } from 'lucide-react';
+import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, Check, ChevronsUpDown, FilterX } from 'lucide-react';
 import { Budget, BudgetItem, BudgetStatus, Vehicle } from '@/lib/types';
 import { formatCurrency, toUpperCase, formatPlate, maskPhone, maskCurrency, parseCurrencyToNumber } from '@/lib/utils-format';
 import { generateBudgetPDF } from '@/lib/pdf-generator';
@@ -17,10 +17,14 @@ import { showError, showSuccess } from '@/utils/toast';
 import PDFImportDialog from '@/components/PDFImportDialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
+import { useSearchParams } from 'react-router-dom';
 
 const Budgets = () => {
   const { budgets, setBudgets, professionals, vehicles, setVehicles } = useStorage();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const filterParam = searchParams.get('filter');
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [openSearch, setOpenSearch] = useState(false);
@@ -49,13 +53,11 @@ const Budgets = () => {
 
     const existingVehicle = vehicles.find(v => v.plate === cleanPlate);
     
-    // Se o veículo já existe, valida o KM
     if (existingVehicle && (formData.km || 0) < existingVehicle.currentKm) {
       showError(`A quilometragem não pode ser inferior à atual do veículo (${existingVehicle.currentKm.toLocaleString()} KM).`);
       return;
     }
 
-    // Se o veículo NÃO existe, cria ele automaticamente para o cliente poder logar
     if (!existingVehicle) {
       const newVehicle: Vehicle = {
         id: Math.random().toString(36).substr(2, 9),
@@ -73,7 +75,6 @@ const Budgets = () => {
       setVehicles([...vehicles, newVehicle]);
       showSuccess('Novo veículo cadastrado automaticamente!');
     } else if (formData.km && formData.km > existingVehicle.currentKm) {
-      // Atualiza o KM do veículo existente se o do orçamento for maior
       setVehicles(vehicles.map(v => v.plate === cleanPlate ? { ...v, currentKm: formData.km || v.currentKm } : v));
     }
 
@@ -151,7 +152,22 @@ const Budgets = () => {
     window.open(`https://wa.me/${OFFICE_PHONE}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  const filteredBudgets = budgets.filter(b => b.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || b.vehiclePlate.toLowerCase().includes(searchTerm.toLowerCase()) || b.number.includes(searchTerm));
+  const filteredBudgets = budgets.filter(b => {
+    const matchesSearch = b.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         b.vehiclePlate.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         b.number.includes(searchTerm);
+    
+    if (filterParam === 'pendentes') {
+      return matchesSearch && ['Aberto', 'Em Negociação'].includes(b.status);
+    }
+    
+    return matchesSearch;
+  });
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSearchParams({});
+  };
 
   const getStatusColor = (status: BudgetStatus) => {
     const colors: Record<BudgetStatus, string> = { 'Rascunho': 'bg-slate-100 text-slate-600', 'Aberto': 'bg-blue-100 text-blue-600', 'Em Negociação': 'bg-amber-100 text-amber-600', 'Em Andamento': 'bg-indigo-100 text-indigo-600', 'Aprovado': 'bg-green-100 text-green-700', 'Concluído': 'bg-emerald-100 text-emerald-700', 'Pago': 'bg-purple-100 text-purple-600', 'Recusado': 'bg-red-100 text-red-600' };
@@ -166,6 +182,11 @@ const Budgets = () => {
           <p className="text-slate-500">Gestão de orçamentos de peças e serviços</p>
         </div>
         <div className="flex gap-2">
+          {filterParam && (
+            <Button variant="outline" onClick={clearFilters} className="border-amber-200 text-amber-600 hover:bg-amber-50">
+              <FilterX className="mr-2" size={18} /> Limpar Filtro
+            </Button>
+          )}
           <PDFImportDialog onImport={handleImportPDF} />
           <Dialog open={isModalOpen} onOpenChange={(open) => { setIsModalOpen(open); if (!open) { setEditingBudget(null); setFormData({ status: 'Aberto', items: [] }); } }}>
             <DialogTrigger asChild><Button className="bg-blue-600"><Plus className="mr-2" /> Novo Orçamento</Button></DialogTrigger>
@@ -306,6 +327,13 @@ const Budgets = () => {
       </div>
 
       <div className="relative mb-6"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} /><Input className="pl-10" placeholder="Buscar por cliente, placa ou número..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+
+      {filterParam === 'pendentes' && (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-100 rounded-lg flex items-center justify-between">
+          <p className="text-sm font-bold text-amber-700">Exibindo apenas orçamentos em aberto ou negociação</p>
+          <Badge className="bg-amber-500">{filteredBudgets.length} Orçamentos</Badge>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4">
         {filteredBudgets.map(budget => (

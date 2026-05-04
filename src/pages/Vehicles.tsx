@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Trash2, Wrench, MessageSquare, Check, ChevronsUpDown } from 'lucide-react';
+import { Plus, Search, Trash2, Wrench, MessageSquare, Check, ChevronsUpDown, FilterX } from 'lucide-react';
 import { Vehicle, MaintenanceRecord } from '@/lib/types';
 import { formatCurrency, toUpperCase, formatPlate, maskPhone, maskCurrency, parseCurrencyToNumber } from '@/lib/utils-format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -20,8 +20,10 @@ import { useSearchParams } from 'react-router-dom';
 
 const Vehicles = () => {
   const { vehicles, setVehicles } = useStorage();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const filterParam = searchParams.get('filter');
+  
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
@@ -94,10 +96,22 @@ const Vehicles = () => {
     }
   };
 
-  const filteredVehicles = vehicles.filter(v => 
-    v.plate.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    v.clientName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredVehicles = vehicles.filter(v => {
+    const matchesSearch = v.plate.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         v.clientName.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (filterParam === 'vencidos') {
+      const isOverdue = (v.currentKm - v.lastOilChangeKm) >= v.oilIntervalKm;
+      return matchesSearch && isOverdue;
+    }
+    
+    return matchesSearch;
+  });
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSearchParams({});
+  };
 
   return (
     <Layout isAdmin={true}>
@@ -106,92 +120,106 @@ const Vehicles = () => {
           <h2 className="text-3xl font-bold text-slate-800">Veículos</h2>
           <p className="text-slate-500">Gestão de frotas e manutenção preventiva</p>
         </div>
-        <Dialog open={isVehicleModalOpen} onOpenChange={setIsVehicleModalOpen}>
-          <DialogTrigger asChild><Button className="bg-blue-600"><Plus className="mr-2" /> Novo Veículo</Button></DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Cadastrar Veículo</DialogTitle></DialogHeader>
-            <div className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">Selecionar Cliente Existente</label>
-                <Popover open={openSearchClient} onOpenChange={setOpenSearchClient}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openSearchClient}
-                      className="w-full justify-between bg-slate-50 border-blue-100"
-                    >
-                      {vehicleForm.clientName || "BUSCAR CLIENTE CADASTRADO..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                    <Command>
-                      <CommandInput placeholder="Digite o nome do cliente..." />
-                      <CommandList>
-                        <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-                        <CommandGroup>
-                          {uniqueClients.map((client) => (
-                            <CommandItem
-                              key={client}
-                              value={client}
-                              onSelect={() => handleSelectExistingClient(client)}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  vehicleForm.clientName === client ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {client}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="relative py-2">
-                <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-                <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-slate-400">Ou preencha manualmente</span></div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3">
-                <Input placeholder="NOME DO CLIENTE" value={vehicleForm.clientName} onChange={e => setVehicleForm({...vehicleForm, clientName: toUpperCase(e.target.value)})} />
-                <Input placeholder="WHATSAPP" value={vehicleForm.clientPhone} onChange={e => setVehicleForm({...vehicleForm, clientPhone: maskPhone(e.target.value)})} />
-                <div className="grid grid-cols-2 gap-2">
-                  <Input 
-                    placeholder="PLACA" 
-                    value={vehicleForm.plate} 
-                    onChange={e => setVehicleForm({...vehicleForm, plate: formatPlate(e.target.value)})} 
-                    className="font-mono" 
-                    maxLength={7}
-                  />
-                  <Input placeholder="MODELO" value={vehicleForm.model} onChange={e => setVehicleForm({...vehicleForm, model: toUpperCase(e.target.value)})} />
+        <div className="flex gap-2">
+          {filterParam && (
+            <Button variant="outline" onClick={clearFilters} className="border-red-200 text-red-600 hover:bg-red-50">
+              <FilterX className="mr-2" size={18} /> Limpar Filtro
+            </Button>
+          )}
+          <Dialog open={isVehicleModalOpen} onOpenChange={setIsVehicleModalOpen}>
+            <DialogTrigger asChild><Button className="bg-blue-600"><Plus className="mr-2" /> Novo Veículo</Button></DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader><DialogTitle>Cadastrar Veículo</DialogTitle></DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Selecionar Cliente Existente</label>
+                  <Popover open={openSearchClient} onOpenChange={setOpenSearchClient}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openSearchClient}
+                        className="w-full justify-between bg-slate-50 border-blue-100"
+                      >
+                        {vehicleForm.clientName || "BUSCAR CLIENTE CADASTRADO..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                      <Command>
+                        <CommandInput placeholder="Digite o nome do cliente..." />
+                        <CommandList>
+                          <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                          <CommandGroup>
+                            {uniqueClients.map((client) => (
+                              <CommandItem
+                                key={client}
+                                value={client}
+                                onSelect={() => handleSelectExistingClient(client)}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    vehicleForm.clientName === client ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {client}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">KM Atual</label>
-                    <Input type="number" value={vehicleForm.currentKm} onChange={e => setVehicleForm({...vehicleForm, currentKm: Number(e.target.value)})} />
+
+                <div className="relative py-2">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                  <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-slate-400">Ou preencha manualmente</span></div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <Input placeholder="NOME DO CLIENTE" value={vehicleForm.clientName} onChange={e => setVehicleForm({...vehicleForm, clientName: toUpperCase(e.target.value)})} />
+                  <Input placeholder="WHATSAPP" value={vehicleForm.clientPhone} onChange={e => setVehicleForm({...vehicleForm, clientPhone: maskPhone(e.target.value)})} />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input 
+                      placeholder="PLACA" 
+                      value={vehicleForm.plate} 
+                      onChange={e => setVehicleForm({...vehicleForm, plate: formatPlate(e.target.value)})} 
+                      className="font-mono" 
+                      maxLength={7}
+                    />
+                    <Input placeholder="MODELO" value={vehicleForm.model} onChange={e => setVehicleForm({...vehicleForm, model: toUpperCase(e.target.value)})} />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Média KM/Mês</label>
-                    <Input type="number" value={vehicleForm.avgKmMonth} onChange={e => setVehicleForm({...vehicleForm, avgKmMonth: Number(e.target.value)})} />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">KM Atual</label>
+                      <Input type="number" value={vehicleForm.currentKm} onChange={e => setVehicleForm({...vehicleForm, currentKm: Number(e.target.value)})} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Média KM/Mês</label>
+                      <Input type="number" value={vehicleForm.avgKmMonth} onChange={e => setVehicleForm({...vehicleForm, avgKmMonth: Number(e.target.value)})} />
+                    </div>
                   </div>
                 </div>
+                <Button onClick={handleSaveVehicle} className="w-full bg-blue-600 h-12 font-bold">Salvar Veículo</Button>
               </div>
-              <Button onClick={handleSaveVehicle} className="w-full bg-blue-600 h-12 font-bold">Salvar Veículo</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
         <Input className="pl-10" placeholder="Buscar por placa ou cliente..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
       </div>
+
+      {filterParam === 'vencidos' && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between">
+          <p className="text-sm font-bold text-red-700">Exibindo apenas veículos com manutenção vencida</p>
+          <Badge variant="destructive">{filteredVehicles.length} Veículos</Badge>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6">
         {filteredVehicles.map((vehicle) => {
