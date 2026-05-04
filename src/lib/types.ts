@@ -59,6 +59,7 @@ export interface Admin {
   id: string;
   name: string;
   email: string;
+  permission: 'MASTER' | 'EDITOR' | 'VISUALIZADOR';
 }
 
 export interface Schedule {

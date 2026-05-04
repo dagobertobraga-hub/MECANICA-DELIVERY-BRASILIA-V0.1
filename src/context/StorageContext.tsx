@@ -135,7 +135,7 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const [admins, setAdmins] = useState<Admin[]>(() => {
     const saved = localStorage.getItem('mecanica_admins_v4');
-    return saved ? JSON.parse(saved) : [{ id: '1', name: 'DAGOBERTO', email: 'dagoberto.braga@gmail.com' }];
+    return saved ? JSON.parse(saved) : [{ id: '1', name: 'DAGOBERTO', email: 'dagoberto.braga@gmail.com', permission: 'MASTER' }];
   });
 
   const [schedules, setSchedules] = useState<Schedule[]>(() => {
