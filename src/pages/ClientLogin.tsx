@@ -107,7 +107,7 @@ const ClientLogin = () => {
                     </button>
                   </div>
                   <p className="text-[10px] text-slate-400 flex items-center gap-1">
-                    <Info size={12} /> A SENHA SÃO OS 4 ÚLTIMOS DÍGITOS DA PLACA.
+                    <Info size={12} /> A SENHA PADRÃO É 1234.
                   </p>
                 </div>
                 <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-lg font-bold">
@@ -116,7 +116,7 @@ const ClientLogin = () => {
                 
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
                   <p className="text-[10px] font-bold text-blue-700 mb-1">DICA PARA TESTE:</p>
-                  <p className="text-[10px] text-blue-600">PLACA: <span className="font-bold">BRA0X45</span> | SENHA: <span className="font-bold">0X45</span></p>
+                  <p className="text-[10px] text-blue-600">PLACA: <span className="font-bold">BRA0X45</span> | SENHA: <span className="font-bold">1234</span></p>
                 </div>
               </form>
             </TabsContent>

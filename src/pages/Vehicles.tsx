@@ -40,7 +40,7 @@ const Vehicles = () => {
       model: toUpperCase(vehicleForm.model || ''),
       clientName: toUpperCase(vehicleForm.clientName || ''),
       clientPhone: vehicleForm.clientPhone || '',
-      password: vehicleForm.plate?.slice(-4),
+      password: '1234',
       currentKm: vehicleForm.currentKm || 0,
       oilIntervalKm: vehicleForm.oilIntervalKm || 10000,
       lastOilChangeKm: 0,
