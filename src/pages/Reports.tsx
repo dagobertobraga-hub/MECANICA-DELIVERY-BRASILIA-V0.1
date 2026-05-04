@@ -7,19 +7,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency, toUpperCase } from '@/lib/utils-format';
 import { generateBudgetPDF } from '@/lib/pdf-generator';
 import { 
   FileText, Car, Calendar, UserCheck, DollarSign, 
   Search, FilterX, Users, TrendingUp, FileDown, 
-  MessageSquare, Edit2, Trash2, CheckCircle2, XCircle 
+  MessageSquare, Edit2, Trash2, CheckCircle2, Star, Plus
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { showSuccess } from '@/utils/toast';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 const Reports = () => {
-  const { budgets, setBudgets, vehicles, setVehicles, schedules, setSchedules, professionals } = useStorage();
+  const { budgets, setBudgets, vehicles, setVehicles, schedules, setSchedules, professionals, reviews, setReviews } = useStorage();
   const navigate = useNavigate();
   const OFFICE_PHONE = "5561991386470";
 
@@ -30,6 +33,15 @@ const Reports = () => {
   const [filterDateEnd, setFilterDateEnd] = useState('');
   const [filterMinKm, setFilterMinKm] = useState('');
   const [filterMaxKm, setFilterMaxKm] = useState('');
+
+  // Estado para nova avaliação manual
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [newReview, setNewReview] = useState({
+    clientName: '',
+    vehiclePlate: '',
+    rating: 5,
+    comment: ''
+  });
 
   const clearFilters = () => {
     setFilterName(''); setFilterPlate(''); setFilterModel('');
@@ -56,10 +68,27 @@ const Reports = () => {
   const filteredBudgets = useMemo(() => applyFilters(budgets), [budgets, vehicles, filterName, filterPlate, filterModel, filterDateStart, filterDateEnd, filterMinKm, filterMaxKm]);
   const filteredVehicles = useMemo(() => applyFilters(vehicles, 'id', 'plate', 'clientName'), [vehicles, filterName, filterPlate, filterModel, filterDateStart, filterDateEnd, filterMinKm, filterMaxKm]);
   const filteredSchedules = useMemo(() => applyFilters(schedules, 'date', 'vehiclePlate', 'clientName'), [schedules, vehicles, filterName, filterPlate, filterModel, filterDateStart, filterDateEnd, filterMinKm, filterMaxKm]);
+  const filteredReviews = useMemo(() => applyFilters(reviews, 'date', 'vehiclePlate', 'clientName'), [reviews, filterName, filterPlate, filterModel, filterDateStart, filterDateEnd, filterMinKm, filterMaxKm]);
 
   const totalFaturado = filteredBudgets.filter(b => b.status === 'Pago').reduce((acc, b) => 
     acc + b.items.reduce((sum, i) => sum + (i.quantity * i.unitValue), 0), 0
   );
+
+  const handleSaveManualReview = () => {
+    const review = {
+      id: Math.random().toString(36).substr(2, 9),
+      ...newReview,
+      clientName: newReview.clientName.toUpperCase(),
+      vehiclePlate: newReview.vehiclePlate.toUpperCase(),
+      comment: newReview.comment.toUpperCase(),
+      date: new Date().toISOString(),
+      budgetId: 'manual'
+    };
+    setReviews([review, ...reviews]);
+    setIsReviewModalOpen(false);
+    setNewReview({ clientName: '', vehiclePlate: '', rating: 5, comment: '' });
+    showSuccess('Avaliação registrada com sucesso!');
+  };
 
   const handleDownloadPDF = (budget: any) => {
     const doc = generateBudgetPDF(budget);
@@ -123,11 +152,12 @@ const Reports = () => {
       </Card>
 
       <Tabs defaultValue="faturamento" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-8">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 mb-8">
           <TabsTrigger value="faturamento" className="flex gap-2"><DollarSign size={16} /> Faturamento</TabsTrigger>
           <TabsTrigger value="budgets" className="flex gap-2"><FileText size={16} /> Orçamentos</TabsTrigger>
           <TabsTrigger value="vehicles" className="flex gap-2"><Car size={16} /> Veículos</TabsTrigger>
           <TabsTrigger value="schedules" className="flex gap-2"><Calendar size={16} /> Agendamentos</TabsTrigger>
+          <TabsTrigger value="reviews" className="flex gap-2"><Star size={16} /> Avaliações</TabsTrigger>
           <TabsTrigger value="professionals" className="flex gap-2"><UserCheck size={16} /> Equipe</TabsTrigger>
         </TabsList>
 
@@ -186,6 +216,79 @@ const Reports = () => {
           </Card>
         </TabsContent>
 
+        <TabsContent value="reviews">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-slate-700 uppercase text-sm">Histórico de Avaliações</h3>
+            <Dialog open={isReviewModalOpen} onOpenChange={setIsReviewModalOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-amber-500 hover:bg-amber-600">
+                  <Plus size={16} className="mr-2" /> Inserir Manualmente
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Nova Avaliação Manual</DialogTitle></DialogHeader>
+                <div className="space-y-4 mt-4">
+                  <Input placeholder="NOME DO CLIENTE" value={newReview.clientName} onChange={e => setNewReview({...newReview, clientName: e.target.value})} />
+                  <Input placeholder="PLACA DO VEÍCULO" value={newReview.vehiclePlate} onChange={e => setNewReview({...newReview, vehiclePlate: e.target.value})} />
+                  <div className="flex flex-col items-center gap-2 py-2">
+                    <p className="text-xs font-bold text-slate-500 uppercase">Nota:</p>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <Star 
+                          key={star} 
+                          size={32} 
+                          className={cn("cursor-pointer", star <= newReview.rating ? "text-amber-400" : "text-slate-200")} 
+                          fill="currentColor" 
+                          onClick={() => setNewReview({...newReview, rating: star})} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <Textarea placeholder="COMENTÁRIO DO CLIENTE..." value={newReview.comment} onChange={e => setNewReview({...newReview, comment: e.target.value})} className="uppercase" />
+                  <Button onClick={handleSaveManualReview} className="w-full bg-blue-600">Salvar Avaliação</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Placa</TableHead>
+                    <TableHead>Nota</TableHead>
+                    <TableHead>Comentário</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredReviews.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="text-xs">{new Date(r.date).toLocaleDateString('pt-BR')}</TableCell>
+                      <TableCell className="font-bold">{r.clientName}</TableCell>
+                      <TableCell>{r.vehiclePlate}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-0.5">
+                          {[...Array(5)].map((_, i) => <Star key={i} size={12} className={i < r.rating ? "text-amber-400" : "text-slate-200"} fill="currentColor" />)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs italic max-w-xs truncate">"{r.comment}"</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" className="text-red-500" onClick={() => setReviews(reviews.filter(x => x.id !== r.id))}>
+                          <Trash2 size={16} />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ... manter as outras TabsContent (budgets, vehicles, schedules, professionals) ... */}
         <TabsContent value="budgets">
           <Card>
             <CardContent className="p-0">
