@@ -86,7 +86,6 @@ const generateMockData = () => {
       updatedAt: createdAt.toISOString()
     });
 
-    // Gerar Avaliações para orçamentos pagos
     if (status === 'Pago' && i < 15) {
       reviews.push({
         id: `r${i}`,
@@ -100,7 +99,6 @@ const generateMockData = () => {
     }
   }
 
-  // Gerar 20 Agendamentos
   for (let i = 0; i < 20; i++) {
     const vehicle = vehicles[i % vehicles.length];
     const date = new Date();
@@ -125,7 +123,9 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const [vehicles, setVehicles] = useState<Vehicle[]>(() => {
     const saved = localStorage.getItem('mecanica_vehicles_v4');
-    return saved ? JSON.parse(saved) : mock.vehicles;
+    const data = saved ? JSON.parse(saved) : mock.vehicles;
+    // Força a senha 1234 para todos os veículos carregados
+    return data.map((v: Vehicle) => ({ ...v, password: '1234' }));
   });
 
   const [budgets, setBudgets] = useState<Budget[]>(() => {
