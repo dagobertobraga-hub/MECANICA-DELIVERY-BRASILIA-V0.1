@@ -112,7 +112,7 @@ const Budgets = () => {
   const filteredBudgets = budgets.filter(b => b.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || b.vehiclePlate.toLowerCase().includes(searchTerm.toLowerCase()) || b.number.includes(searchTerm));
 
   const getStatusColor = (status: BudgetStatus) => {
-    const colors: Record<BudgetStatus, string> = { 'Rascunho': 'bg-slate-100 text-slate-600', 'Aberto': 'bg-blue-100 text-blue-600', 'Em Negociação': 'bg-amber-100 text-amber-600', 'Em Andamento': 'bg-indigo-100 text-indigo-600', 'Aprovado': 'bg-green-100 text-green-600', 'Concluído': 'bg-emerald-100 text-emerald-600', 'Pago': 'bg-purple-100 text-purple-600', 'Recusado': 'bg-red-100 text-red-600' };
+    const colors: Record<BudgetStatus, string> = { 'Rascunho': 'bg-slate-100 text-slate-600', 'Aberto': 'bg-blue-100 text-blue-600', 'Em Negociação': 'bg-amber-100 text-amber-600', 'Em Andamento': 'bg-indigo-100 text-indigo-600', 'Aprovado': 'bg-green-100 text-green-700', 'Concluído': 'bg-emerald-100 text-emerald-700', 'Pago': 'bg-purple-100 text-purple-600', 'Recusado': 'bg-red-100 text-red-600' };
     return colors[status];
   };
 
@@ -139,37 +139,71 @@ const Budgets = () => {
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <Input value={formData.clientName} onChange={e => setFormData({...formData, clientName: toUpperCase(e.target.value)})} placeholder="NOME DO CLIENTE" />
-                <Input value={formData.clientPhone} onChange={e => setFormData({...formData, clientPhone: e.target.value})} placeholder="TELEFONE" />
-                <Input 
-                  value={formData.vehiclePlate} 
-                  onChange={e => setFormData({...formData, vehiclePlate: formatPlate(e.target.value)})} 
-                  placeholder="PLACA" 
-                  maxLength={7}
-                  className="font-mono"
-                />
-                <Input type="number" value={formData.km} onChange={e => setFormData({...formData, km: Number(e.target.value)})} placeholder="KM" />
-                <Select value={formData.professionalId} onValueChange={v => setFormData({...formData, professionalId: v})}>
-                  <SelectTrigger><SelectValue placeholder="Profissional" /></SelectTrigger>
-                  <SelectContent>{professionals.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-                </Select>
-                <Select value={formData.status} onValueChange={v => setFormData({...formData, status: v as BudgetStatus})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{['Rascunho', 'Aberto', 'Em Negociação', 'Em Andamento', 'Aprovado', 'Concluído', 'Pago', 'Recusado'].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="mt-8 border-t pt-6">
-                <h3 className="font-bold mb-4">Itens</h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
-                  <Input className="md:col-span-2" placeholder="DESCRIÇÃO" value={newItem.description} onChange={e => setNewItem({...newItem, description: toUpperCase(e.target.value)})} />
-                  <Input type="number" placeholder="QTD" value={newItem.quantity} onChange={e => setNewItem({...newItem, quantity: Number(e.target.value)})} />
-                  <Input type="number" placeholder="VALOR" value={newItem.unitValue} onChange={e => setNewItem({...newItem, unitValue: Number(e.target.value)})} />
-                  <Select value={newItem.type} onValueChange={v => setNewItem({...newItem, type: v as any})}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="Peça">Peça</SelectItem><SelectItem value="Serviço">Serviço</SelectItem></SelectContent>
-                  </Select>
-                  <Button onClick={addItem} className="bg-slate-800">Adicionar</Button>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Nome do Cliente</label>
+                  <Input value={formData.clientName} onChange={e => setFormData({...formData, clientName: toUpperCase(e.target.value)})} placeholder="NOME COMPLETO" />
                 </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Telefone / WhatsApp</label>
+                  <Input value={formData.clientPhone} onChange={e => setFormData({...formData, clientPhone: e.target.value})} placeholder="(00) 00000-0000" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Placa do Veículo</label>
+                  <Input 
+                    value={formData.vehiclePlate} 
+                    onChange={e => setFormData({...formData, vehiclePlate: formatPlate(e.target.value)})} 
+                    placeholder="ABC1D23" 
+                    maxLength={7}
+                    className="font-mono"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Quilometragem (KM)</label>
+                  <Input type="number" value={formData.km} onChange={e => setFormData({...formData, km: Number(e.target.value)})} placeholder="0" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Profissional Responsável</label>
+                  <Select value={formData.professionalId} onValueChange={v => setFormData({...formData, professionalId: v})}>
+                    <SelectTrigger><SelectValue placeholder="SELECIONE..." /></SelectTrigger>
+                    <SelectContent>{professionals.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Status do Orçamento</label>
+                  <Select value={formData.status} onValueChange={v => setFormData({...formData, status: v as BudgetStatus})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{['Rascunho', 'Aberto', 'Em Negociação', 'Em Andamento', 'Aprovado', 'Concluído', 'Pago', 'Recusado'].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="mt-8 border-t pt-6">
+                <h3 className="font-bold mb-4 text-slate-800">Itens do Orçamento</h3>
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-2 mb-4 items-end">
+                  <div className="md:col-span-5 space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Descrição da Peça/Serviço</label>
+                    <Input placeholder="EX: TROCA DE ÓLEO" value={newItem.description} onChange={e => setNewItem({...newItem, description: toUpperCase(e.target.value)})} />
+                  </div>
+                  <div className="md:col-span-2 space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Qtd</label>
+                    <Input type="number" placeholder="1" value={newItem.quantity} onChange={e => setNewItem({...newItem, quantity: Number(e.target.value)})} />
+                  </div>
+                  <div className="md:col-span-2 space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Vlr. Unit</label>
+                    <Input type="number" placeholder="0.00" value={newItem.unitValue} onChange={e => setNewItem({...newItem, unitValue: Number(e.target.value)})} />
+                  </div>
+                  <div className="md:col-span-2 space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Tipo</label>
+                    <Select value={newItem.type} onValueChange={v => setNewItem({...newItem, type: v as any})}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="Peça">Peça</SelectItem><SelectItem value="Serviço">Serviço</SelectItem></SelectContent>
+                    </Select>
+                  </div>
+                  <div className="md:col-span-1">
+                    <Button onClick={addItem} className="w-full bg-slate-800"><Plus size={18} /></Button>
+                  </div>
+                </div>
+                
                 <div className="space-y-2">
                   {formData.items?.map(item => (
                     <div key={item.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border">
@@ -179,13 +213,17 @@ const Budgets = () => {
                   ))}
                 </div>
               </div>
-              <div className="flex justify-end gap-2 mt-8"><Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button><Button onClick={handleSave} className="bg-blue-600">Salvar</Button></div>
+              
+              <div className="flex justify-end gap-2 mt-8 border-t pt-4">
+                <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+                <Button onClick={handleSave} className="bg-blue-600 px-8">Salvar Orçamento</Button>
+              </div>
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
-      <div className="relative mb-6"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} /><Input className="pl-10" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+      <div className="relative mb-6"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} /><Input className="pl-10" placeholder="Buscar por cliente, placa ou número..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
 
       <div className="grid grid-cols-1 gap-4">
         {filteredBudgets.map(budget => (
