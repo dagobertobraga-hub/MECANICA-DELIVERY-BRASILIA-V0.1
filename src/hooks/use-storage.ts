@@ -39,29 +39,29 @@ const generateMockData = () => {
 };
 
 export function useStorage() {
-  // Forçamos o reset para a nova carga de dados solicitada
+  // Forçamos o reset para a nova carga de dados (v4)
   const [vehicles, setVehicles] = useState<Vehicle[]>(() => {
-    const saved = localStorage.getItem('mecanica_vehicles_v3'); // Nova chave para forçar reset com a nova senha
+    const saved = localStorage.getItem('mecanica_vehicles_v4');
     return saved ? JSON.parse(saved) : generateMockData();
   });
 
   const [budgets, setBudgets] = useState<Budget[]>(() => {
-    const saved = localStorage.getItem('mecanica_budgets_v3');
+    const saved = localStorage.getItem('mecanica_budgets_v4');
     return saved ? JSON.parse(saved) : [];
   });
 
   const [admins, setAdmins] = useState<Admin[]>(() => {
-    const saved = localStorage.getItem('mecanica_admins_v3');
+    const saved = localStorage.getItem('mecanica_admins_v4');
     return saved ? JSON.parse(saved) : [{ id: '1', name: 'DAGOBERTO', email: 'dagoberto.braga@gmail.com' }];
   });
 
   const [schedules, setSchedules] = useState<Schedule[]>(() => {
-    const saved = localStorage.getItem('mecanica_schedules_v3');
+    const saved = localStorage.getItem('mecanica_schedules_v4');
     return saved ? JSON.parse(saved) : [];
   });
 
   const [professionals, setProfessionals] = useState<Professional[]>(() => {
-    const saved = localStorage.getItem('mecanica_professionals_v3');
+    const saved = localStorage.getItem('mecanica_professionals_v4');
     return saved ? JSON.parse(saved) : [
       { id: 'p1', name: 'DAGOBERTO BRAGA', role: 'MECÂNICO MASTER', commissionRate: 10 },
       { id: 'p2', name: 'RICARDO SILVA', role: 'AUXILIAR TÉCNICO', commissionRate: 5 }
@@ -69,16 +69,16 @@ export function useStorage() {
   });
 
   const [reviews, setReviews] = useState<Review[]>(() => {
-    const saved = localStorage.getItem('mecanica_reviews_v3');
+    const saved = localStorage.getItem('mecanica_reviews_v4');
     return saved ? JSON.parse(saved) : [];
   });
 
-  useEffect(() => { localStorage.setItem('mecanica_vehicles_v3', JSON.stringify(vehicles)); }, [vehicles]);
-  useEffect(() => { localStorage.setItem('mecanica_budgets_v3', JSON.stringify(budgets)); }, [budgets]);
-  useEffect(() => { localStorage.setItem('mecanica_admins_v3', JSON.stringify(admins)); }, [admins]);
-  useEffect(() => { localStorage.setItem('mecanica_schedules_v3', JSON.stringify(schedules)); }, [schedules]);
-  useEffect(() => { localStorage.setItem('mecanica_professionals_v3', JSON.stringify(professionals)); }, [professionals]);
-  useEffect(() => { localStorage.setItem('mecanica_reviews_v3', JSON.stringify(reviews)); }, [reviews]);
+  useEffect(() => { localStorage.setItem('mecanica_vehicles_v4', JSON.stringify(vehicles)); }, [vehicles]);
+  useEffect(() => { localStorage.setItem('mecanica_budgets_v4', JSON.stringify(budgets)); }, [budgets]);
+  useEffect(() => { localStorage.setItem('mecanica_admins_v4', JSON.stringify(admins)); }, [admins]);
+  useEffect(() => { localStorage.setItem('mecanica_schedules_v4', JSON.stringify(schedules)); }, [schedules]);
+  useEffect(() => { localStorage.setItem('mecanica_professionals_v4', JSON.stringify(professionals)); }, [professionals]);
+  useEffect(() => { localStorage.setItem('mecanica_reviews_v4', JSON.stringify(reviews)); }, [reviews]);
 
   return { 
     budgets, setBudgets, 

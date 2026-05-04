@@ -113,9 +113,12 @@ const Reports = () => {
               <label className="text-[10px] font-bold text-slate-400 uppercase">KM Máximo</label>
               <Input type="number" placeholder="999999" value={filterMaxKm} onChange={e => setFilterMaxKm(e.target.value)} />
             </div>
-            <div className="flex items-end">
-              <Button variant="outline" onClick={clearFilters} className="w-full border-slate-200 text-slate-500 hover:bg-slate-50">
-                <FilterX className="mr-2" size={16} /> Limpar Filtros
+            <div className="flex items-end gap-2">
+              <Button className="flex-1 bg-blue-600 hover:bg-blue-700">
+                <Search className="mr-2" size={16} /> Pesquisar
+              </Button>
+              <Button variant="outline" onClick={clearFilters} className="border-slate-200 text-slate-500 hover:bg-slate-50">
+                <FilterX size={16} />
               </Button>
             </div>
           </div>
