@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, Check, ChevronsUpDown } from 'lucide-react';
-import { Budget, BudgetItem, BudgetStatus } from '@/lib/types';
+import { Budget, BudgetItem, BudgetStatus, Vehicle } from '@/lib/types';
 import { formatCurrency, toUpperCase, formatPlate, maskPhone, maskCurrency, parseCurrencyToNumber } from '@/lib/utils-format';
 import { generateBudgetPDF } from '@/lib/pdf-generator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -19,7 +19,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 
 const Budgets = () => {
-  const { budgets, setBudgets, professionals, vehicles } = useStorage();
+  const { budgets, setBudgets, professionals, vehicles, setVehicles } = useStorage();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
@@ -41,17 +41,47 @@ const Budgets = () => {
   };
 
   const handleSave = () => {
-    const vehicle = vehicles.find(v => v.plate === formData.vehiclePlate);
-    if (vehicle && (formData.km || 0) < vehicle.currentKm) {
-      showError(`A quilometragem não pode ser inferior à atual do veículo (${vehicle.currentKm.toLocaleString()} KM).`);
+    const cleanPlate = formatPlate(formData.vehiclePlate || '');
+    if (!cleanPlate) {
+      showError('A placa é obrigatória.');
       return;
+    }
+
+    const existingVehicle = vehicles.find(v => v.plate === cleanPlate);
+    
+    // Se o veículo já existe, valida o KM
+    if (existingVehicle && (formData.km || 0) < existingVehicle.currentKm) {
+      showError(`A quilometragem não pode ser inferior à atual do veículo (${existingVehicle.currentKm.toLocaleString()} KM).`);
+      return;
+    }
+
+    // Se o veículo NÃO existe, cria ele automaticamente para o cliente poder logar
+    if (!existingVehicle) {
+      const newVehicle: Vehicle = {
+        id: Math.random().toString(36).substr(2, 9),
+        plate: cleanPlate,
+        model: 'NÃO INFORMADO',
+        clientName: toUpperCase(formData.clientName || 'CLIENTE NOVO'),
+        clientPhone: formData.clientPhone || '',
+        password: '1234',
+        currentKm: formData.km || 0,
+        oilIntervalKm: 10000,
+        lastOilChangeKm: 0,
+        avgKmMonth: 1000,
+        maintenances: []
+      };
+      setVehicles([...vehicles, newVehicle]);
+      showSuccess('Novo veículo cadastrado automaticamente!');
+    } else if (formData.km && formData.km > existingVehicle.currentKm) {
+      // Atualiza o KM do veículo existente se o do orçamento for maior
+      setVehicles(vehicles.map(v => v.plate === cleanPlate ? { ...v, currentKm: formData.km || v.currentKm } : v));
     }
 
     const totals = calculateTotals(formData.items || []);
     const prof = professionals.find(p => p.id === formData.professionalId);
     const commission = prof ? (totals.services * (prof.commissionRate / 100)) : 0;
 
-    const budgetData = { ...formData, commissionValue: commission, updatedAt: new Date().toISOString() };
+    const budgetData = { ...formData, vehiclePlate: cleanPlate, commissionValue: commission, updatedAt: new Date().toISOString() };
 
     if (editingBudget) {
       setBudgets(budgets.map(b => b.id === editingBudget.id ? { ...editingBudget, ...budgetData } as Budget : b));
@@ -61,7 +91,7 @@ const Budgets = () => {
         number: (budgets.length + 1).toString().padStart(4, '0'),
         clientName: formData.clientName || '',
         clientPhone: formData.clientPhone || '',
-        vehiclePlate: formatPlate(formData.vehiclePlate || ''),
+        vehiclePlate: cleanPlate,
         km: formData.km || 0,
         status: formData.status as BudgetStatus,
         items: formData.items || [],
