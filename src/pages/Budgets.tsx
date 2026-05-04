@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, Check, ChevronsUpDown } from 'lucide-react';
 import { Budget, BudgetItem, BudgetStatus } from '@/lib/types';
-import { formatCurrency, toUpperCase, formatPlate } from '@/lib/utils-format';
+import { formatCurrency, toUpperCase, formatPlate, maskPhone, maskCurrency, parseCurrencyToNumber } from '@/lib/utils-format';
 import { generateBudgetPDF } from '@/lib/pdf-generator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,8 +30,8 @@ const Budgets = () => {
     clientName: '', clientPhone: '', vehiclePlate: '', km: 0, status: 'Aberto', items: [], professionalId: ''
   });
 
-  const [newItem, setNewItem] = useState<Partial<BudgetItem>>({
-    description: '', quantity: 1, unitValue: 0, type: 'Peça'
+  const [newItem, setNewItem] = useState({
+    description: '', quantity: 1, unitValue: "R$ 0,00", type: 'Peça'
   });
 
   const calculateTotals = (items: BudgetItem[]) => {
@@ -86,7 +86,7 @@ const Budgets = () => {
   const handleSelectVehicle = (vehicleId: string) => {
     const v = vehicles.find(veh => veh.id === vehicleId);
     if (v) {
-      setFormData({ ...formData, clientName: v.clientName, clientPhone: v.clientPhone, vehiclePlate: v.plate, km: v.currentKm });
+      setFormData({ ...formData, clientName: v.clientName, clientPhone: maskPhone(v.clientPhone), vehiclePlate: v.plate, km: v.currentKm });
       setOpenSearch(false);
       showSuccess('Dados carregados!');
     }
@@ -94,8 +94,15 @@ const Budgets = () => {
 
   const addItem = () => {
     if (newItem.description && newItem.unitValue) {
-      setFormData({ ...formData, items: [...(formData.items || []), { ...newItem, id: Math.random().toString(36).substr(2, 9) } as BudgetItem] });
-      setNewItem({ description: '', quantity: 1, unitValue: 0, type: 'Peça' });
+      const unitValueNum = parseCurrencyToNumber(newItem.unitValue);
+      setFormData({ ...formData, items: [...(formData.items || []), { 
+        id: Math.random().toString(36).substr(2, 9),
+        description: newItem.description,
+        quantity: newItem.quantity,
+        unitValue: unitValueNum,
+        type: newItem.type as any
+      }] });
+      setNewItem({ description: '', quantity: 1, unitValue: "R$ 0,00", type: 'Peça' });
     }
   };
 
@@ -185,7 +192,7 @@ const Budgets = () => {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Telefone / WhatsApp</label>
-                  <Input value={formData.clientPhone} onChange={e => setFormData({...formData, clientPhone: e.target.value})} placeholder="(00) 00000-0000" />
+                  <Input value={formData.clientPhone} onChange={e => setFormData({...formData, clientPhone: maskPhone(e.target.value)})} placeholder="(00) 00000-0000" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Placa do Veículo</label>
@@ -230,7 +237,7 @@ const Budgets = () => {
                   </div>
                   <div className="md:col-span-2 space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Vlr. Unit</label>
-                    <Input type="number" placeholder="0.00" value={newItem.unitValue} onChange={e => setNewItem({...newItem, unitValue: Number(e.target.value)})} />
+                    <Input placeholder="R$ 0,00" value={newItem.unitValue} onChange={e => setNewItem({...newItem, unitValue: maskCurrency(e.target.value)})} />
                   </div>
                   <div className="md:col-span-2 space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Tipo</label>

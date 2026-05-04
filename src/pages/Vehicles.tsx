@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Trash2, Wrench, MessageSquare, Check, ChevronsUpDown } from 'lucide-react';
 import { Vehicle, MaintenanceRecord } from '@/lib/types';
-import { formatCurrency, toUpperCase, formatPlate } from '@/lib/utils-format';
+import { formatCurrency, toUpperCase, formatPlate, maskPhone, maskCurrency, parseCurrencyToNumber } from '@/lib/utils-format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -30,8 +30,8 @@ const Vehicles = () => {
     plate: '', model: '', clientName: '', clientPhone: '', currentKm: 0, oilIntervalKm: 10000, avgKmMonth: 1000
   });
 
-  const [maintenanceForm, setMaintenanceForm] = useState<Partial<MaintenanceRecord>>({
-    description: '', km: 0, value: 0, type: 'Outros', date: new Date().toISOString().split('T')[0]
+  const [maintenanceForm, setMaintenanceForm] = useState({
+    description: '', km: 0, value: "R$ 0,00", type: 'Outros', date: new Date().toISOString().split('T')[0]
   });
 
   const uniqueClients = Array.from(new Set(vehicles.map(v => v.clientName))).sort();
@@ -58,12 +58,13 @@ const Vehicles = () => {
 
   const handleAddMaintenance = () => {
     if (selectedVehicle) {
+      const valueNum = parseCurrencyToNumber(maintenanceForm.value);
       const newRecord: MaintenanceRecord = {
         id: Math.random().toString(36).substr(2, 9),
         date: maintenanceForm.date || new Date().toISOString(),
         km: maintenanceForm.km || 0,
         description: toUpperCase(maintenanceForm.description || ''),
-        value: maintenanceForm.value || 0,
+        value: valueNum,
         type: maintenanceForm.type as any
       };
       const updatedVehicle = {
@@ -74,6 +75,7 @@ const Vehicles = () => {
       };
       setVehicles(vehicles.map(v => v.id === selectedVehicle.id ? updatedVehicle : v));
       setIsMaintenanceModalOpen(false);
+      setMaintenanceForm({ description: '', km: 0, value: "R$ 0,00", type: 'Outros', date: new Date().toISOString().split('T')[0] });
       showSuccess('Manutenção registrada!');
     }
   };
@@ -84,7 +86,7 @@ const Vehicles = () => {
       setVehicleForm({
         ...vehicleForm,
         clientName: existing.clientName,
-        clientPhone: existing.clientPhone
+        clientPhone: maskPhone(existing.clientPhone)
       });
       setOpenSearchClient(false);
     }
@@ -156,7 +158,7 @@ const Vehicles = () => {
 
               <div className="grid grid-cols-1 gap-3">
                 <Input placeholder="NOME DO CLIENTE" value={vehicleForm.clientName} onChange={e => setVehicleForm({...vehicleForm, clientName: toUpperCase(e.target.value)})} />
-                <Input placeholder="WHATSAPP" value={vehicleForm.clientPhone} onChange={e => setVehicleForm({...vehicleForm, clientPhone: e.target.value})} />
+                <Input placeholder="WHATSAPP" value={vehicleForm.clientPhone} onChange={e => setVehicleForm({...vehicleForm, clientPhone: maskPhone(e.target.value)})} />
                 <div className="grid grid-cols-2 gap-2">
                   <Input 
                     placeholder="PLACA" 
@@ -287,7 +289,7 @@ const Vehicles = () => {
               </SelectContent>
             </Select>
             <Input placeholder="DESCRIÇÃO" value={maintenanceForm.description} onChange={e => setMaintenanceForm({...maintenanceForm, description: toUpperCase(e.target.value)})} />
-            <Input type="number" placeholder="VALOR R$" value={maintenanceForm.value} onChange={e => setMaintenanceForm({...maintenanceForm, value: Number(e.target.value)})} />
+            <Input placeholder="VALOR R$" value={maintenanceForm.value} onChange={e => setMaintenanceForm({...maintenanceForm, value: maskCurrency(e.target.value)})} />
             <Button onClick={handleAddMaintenance} className="w-full bg-blue-600">Salvar</Button>
           </div>
         </DialogContent>
