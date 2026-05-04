@@ -84,7 +84,7 @@ const Reports = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-400 uppercase">Cliente</label>
               <Input placeholder="NOME..." value={filterName} onChange={e => setFilterName(toUpperCase(e.target.value))} />
@@ -114,7 +114,7 @@ const Reports = () => {
               <Input type="number" placeholder="999999" value={filterMaxKm} onChange={e => setFilterMaxKm(e.target.value)} />
             </div>
             <div className="flex items-end">
-              <Button variant="outline" onClick={clearFilters} className="w-full border-slate-200 text-slate-500 hover:bg-slate-50">
+              <Button variant="outline" onClick={clearFilters} className="w-full border-slate-200 text-slate-500 hover:bg-slate-50 h-10">
                 <FilterX className="mr-2" size={16} /> Limpar Filtros
               </Button>
             </div>
