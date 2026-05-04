@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useStorage } from '@/hooks/use-storage';
 import { Button } from '@/components/ui/button';
@@ -16,10 +16,12 @@ import { showSuccess } from '@/utils/toast';
 import { getNextRevision, calculateUsagePrediction } from '@/lib/maintenance-logic';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useSearchParams } from 'react-router-dom';
 
 const Vehicles = () => {
   const { vehicles, setVehicles } = useStorage();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);

@@ -136,7 +136,9 @@ const Index = () => {
                     <p className="font-bold text-red-700">{v.plate}</p>
                     <p className="text-xs text-red-600">{v.model} - {v.clientName}</p>
                   </div>
-                  <Button size="sm" variant="outline" className="text-red-700 border-red-200" asChild><Link to="/vehicles">Ver Detalhes</Link></Button>
+                  <Button size="sm" variant="outline" className="text-red-700 border-red-200" asChild>
+                    <Link to={`/vehicles?search=${v.plate}`}>Ver Detalhes</Link>
+                  </Button>
                 </div>
               ))}
             </div>
