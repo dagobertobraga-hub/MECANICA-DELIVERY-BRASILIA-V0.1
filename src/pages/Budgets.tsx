@@ -5,21 +5,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, AlertCircle } from 'lucide-react';
+import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, Check, ChevronsUpDown } from 'lucide-react';
 import { Budget, BudgetItem, BudgetStatus } from '@/lib/types';
 import { formatCurrency, toUpperCase, formatPlate } from '@/lib/utils-format';
 import { generateBudgetPDF } from '@/lib/pdf-generator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { showError, showSuccess } from '@/utils/toast';
 import PDFImportDialog from '@/components/PDFImportDialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from '@/lib/utils';
 
 const Budgets = () => {
   const { budgets, setBudgets, professionals, vehicles } = useStorage();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+  const [openSearch, setOpenSearch] = useState(false);
   const OFFICE_PHONE = "5561991386470";
 
   const [formData, setFormData] = useState<Partial<Budget>>({
@@ -83,6 +87,7 @@ const Budgets = () => {
     const v = vehicles.find(veh => veh.id === vehicleId);
     if (v) {
       setFormData({ ...formData, clientName: v.clientName, clientPhone: v.clientPhone, vehiclePlate: v.plate, km: v.currentKm });
+      setOpenSearch(false);
       showSuccess('Dados carregados!');
     }
   };
@@ -131,11 +136,46 @@ const Budgets = () => {
               <DialogHeader><DialogTitle>{editingBudget ? 'Editar Orçamento' : 'Novo Orçamento'}</DialogTitle></DialogHeader>
               {!editingBudget && (
                 <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                  <label className="text-xs font-bold text-blue-600 uppercase mb-2 block">Buscar Veículo/Cliente</label>
-                  <Select onValueChange={handleSelectVehicle}>
-                    <SelectTrigger className="bg-white"><SelectValue placeholder="PESQUISAR..." /></SelectTrigger>
-                    <SelectContent>{vehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.plate} - {v.clientName}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <label className="text-xs font-bold text-blue-600 uppercase mb-2 block">Buscar Veículo/Cliente (Digite para filtrar)</label>
+                  <Popover open={openSearch} onOpenChange={setOpenSearch}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openSearch}
+                        className="w-full justify-between bg-white"
+                      >
+                        {formData.vehiclePlate ? `${formData.vehiclePlate} - ${formData.clientName}` : "PESQUISAR POR PLACA OU NOME..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                      <Command>
+                        <CommandInput placeholder="Digite a placa ou nome..." />
+                        <CommandList>
+                          <CommandEmpty>Nenhum veículo encontrado.</CommandEmpty>
+                          <CommandGroup>
+                            {vehicles.map((v) => (
+                              <CommandItem
+                                key={v.id}
+                                value={`${v.plate} ${v.clientName}`}
+                                onSelect={() => handleSelectVehicle(v.id)}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    formData.vehiclePlate === v.plate ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <span className="font-bold mr-2">{v.plate}</span>
+                                <span className="text-slate-500">{v.clientName}</span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
