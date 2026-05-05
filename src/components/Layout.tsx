@@ -93,7 +93,7 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
                   <item.icon size={20} />
                   {item.label}
                 </div>
-                {item.badge && item.badge > 0 && (
+                {typeof item.badge === 'number' && item.badge > 0 && (
                   <span className={cn(
                     "text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse",
                     item.badgeColor || "bg-red-500"
