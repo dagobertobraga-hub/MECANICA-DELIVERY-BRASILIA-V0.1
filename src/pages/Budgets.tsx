@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { showError, showSuccess } from '@/utils/toast';
-import PDFImportDialog from '@/components/PDFImportDialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
 import { useSearchParams } from 'react-router-dom';
@@ -109,11 +108,6 @@ const Budgets = () => {
     showSuccess('Orçamento salvo!');
   };
 
-  const handleImportPDF = (data: any) => {
-    setFormData({ ...formData, clientName: data.clientName || formData.clientName, vehiclePlate: formatPlate(data.vehiclePlate || formData.vehiclePlate), km: data.km || formData.km, items: data.items || formData.items });
-    setIsModalOpen(true);
-  };
-
   const handleSelectVehicle = (vehicleId: string) => {
     const v = vehicles.find(veh => veh.id === vehicleId);
     if (v) {
@@ -187,7 +181,6 @@ const Budgets = () => {
               <FilterX className="mr-2" size={18} /> Limpar Filtro
             </Button>
           )}
-          <PDFImportDialog onImport={handleImportPDF} />
           <Dialog open={isModalOpen} onOpenChange={(open) => { setIsModalOpen(open); if (!open) { setEditingBudget(null); setFormData({ status: 'Aberto', items: [] }); } }}>
             <DialogTrigger asChild><Button className="bg-blue-600"><Plus className="mr-2" /> Novo Orçamento</Button></DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
