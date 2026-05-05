@@ -11,6 +11,7 @@ import Clients from "./pages/Clients";
 import Admins from "./pages/Admins";
 import Schedules from "./pages/Schedules";
 import Professionals from "./pages/Professionals";
+import ProfessionalForm from "./pages/ProfessionalForm";
 import Reports from "./pages/Reports";
 import ClientLogin from "./pages/ClientLogin";
 import ClientDashboard from "./pages/ClientDashboard";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/admins" element={<Admins />} />
             <Route path="/schedules" element={<Schedules />} />
             <Route path="/professionals" element={<Professionals />} />
+            <Route path="/professionals/:id" element={<ProfessionalForm />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/login" element={<ClientLogin />} />
             <Route path="/client-dashboard" element={<ClientDashboard />} />
