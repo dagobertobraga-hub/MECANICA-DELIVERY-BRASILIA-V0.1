@@ -49,7 +49,7 @@ const Index = () => {
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div className="flex items-center gap-2">
               <Calendar className="text-amber-600" size={20} />
-              <CardTitle className="text-lg font-bold text-amber-900">Novas Solicitações</CardTitle>
+              <CardTitle className="text-lg font-bold text-amber-900">Pedidos de Agendamento</CardTitle>
               <Badge className="bg-amber-500">{pendingSchedules.length}</Badge>
             </div>
             <Button variant="ghost" size="sm" asChild className="text-amber-700"><Link to="/schedules">Ver todos <ArrowRight className="ml-1" size={16} /></Link></Button>
