@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency } from '@/lib/utils-format';
-import { Wrench, Clock, CheckCircle2, AlertTriangle, CalendarPlus, Calendar, Star, MessageSquare, User } from 'lucide-react';
+import { Wrench, Clock, CheckCircle2, AlertTriangle, CalendarPlus, Calendar, Star, MessageSquare, User, FileText, FileDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { showSuccess } from '@/utils/toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Schedule, Review } from '@/lib/types';
+import { Schedule, Review, BudgetStatus } from '@/lib/types';
 import { getNextRevision, calculateUsagePrediction } from '@/lib/maintenance-logic';
+import { generateBudgetPDF } from '@/lib/pdf-generator';
 
 const ClientDashboard = () => {
   const { vehicles, budgets, schedules, setSchedules, reviews, setReviews } = useStorage();
@@ -30,7 +31,9 @@ const ClientDashboard = () => {
   if (!vehicle) return <div className="p-8 text-center">Veículo não encontrado.</div>;
 
   const clientSchedules = schedules.filter(s => s.vehiclePlate === plate);
-  const clientBudgets = budgets.filter(b => b.vehiclePlate === plate && b.status === 'Pago');
+  const clientBudgets = budgets.filter(b => b.vehiclePlate === plate).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const paidBudgets = clientBudgets.filter(b => b.status === 'Pago');
+  
   const nextRev = getNextRevision(vehicle.currentKm);
   const prediction = calculateUsagePrediction(vehicle.currentKm, vehicle.avgKmMonth);
   const isOverdue = (vehicle.currentKm - vehicle.lastOilChangeKm) >= vehicle.oilIntervalKm;
@@ -70,6 +73,25 @@ const ClientDashboard = () => {
   const handleContactWhatsApp = () => {
     const msg = `Olá! Sou ${vehicle.clientName}, proprietário do veículo ${vehicle.model} (${vehicle.plate}). Gostaria de tirar uma dúvida.`;
     window.open(`https://wa.me/5561991386470?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  const handleDownloadPDF = (budget: any) => {
+    const doc = generateBudgetPDF(budget);
+    doc.save(`orcamento_${budget.number}.pdf`);
+  };
+
+  const getStatusColor = (status: BudgetStatus) => {
+    const colors: Record<BudgetStatus, string> = { 
+      'Rascunho': 'bg-slate-100 text-slate-600', 
+      'Aberto': 'bg-blue-100 text-blue-600', 
+      'Em Negociação': 'bg-amber-100 text-amber-600', 
+      'Em Andamento': 'bg-indigo-100 text-indigo-600', 
+      'Aprovado': 'bg-green-100 text-green-700', 
+      'Concluído': 'bg-emerald-100 text-emerald-700', 
+      'Pago': 'bg-purple-100 text-purple-600', 
+      'Recusado': 'bg-red-100 text-red-600' 
+    };
+    return colors[status];
   };
 
   return (
@@ -128,7 +150,7 @@ const ClientDashboard = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><Calendar className="text-blue-600" /> Meus Agendamentos</CardTitle></CardHeader>
           <CardContent>
@@ -153,40 +175,62 @@ const ClientDashboard = () => {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><Star className="text-amber-500" /> Avaliar Serviços Realizados</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="text-blue-600" /> Histórico de Orçamentos</CardTitle></CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {clientBudgets.length > 0 ? clientBudgets.map(b => {
-                const review = reviews.find(r => r.budgetId === b.id);
-                return (
-                  <div key={b.id} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <p className="font-bold text-slate-800">OS #{b.number}</p>
-                        <p className="text-xs text-slate-500">{new Date(b.createdAt).toLocaleDateString()}</p>
-                      </div>
-                      {!review && (
-                        <Button size="sm" className="bg-blue-600" onClick={() => { setSelectedBudgetId(b.id); setIsReviewModalOpen(true); }}>Avaliar</Button>
-                      )}
+              {clientBudgets.length > 0 ? clientBudgets.map(b => (
+                <div key={b.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-slate-800">OS #{b.number}</p>
+                      <Badge className={cn("text-[10px]", getStatusColor(b.status))} variant="outline">{b.status}</Badge>
                     </div>
-                    
-                    {review && (
-                      <div className="mt-3 pt-3 border-t border-slate-200">
-                        <div className="flex gap-1 mb-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} size={14} className={i < review.rating ? "text-amber-400" : "text-slate-200"} fill="currentColor" />
-                          ))}
-                        </div>
-                        <p className="text-xs text-slate-600 italic">"{review.comment}"</p>
-                      </div>
-                    )}
+                    <p className="text-xs text-slate-500">{new Date(b.createdAt).toLocaleDateString()} • {formatCurrency(b.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0))}</p>
                   </div>
-                );
-              }) : <p className="text-center text-slate-400 py-8 text-sm">Nenhum serviço concluído para avaliar.</p>}
+                  <Button variant="outline" size="sm" className="border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => handleDownloadPDF(b)}>
+                    <FileDown size={16} className="mr-1" /> PDF
+                  </Button>
+                </div>
+              )) : <p className="text-center text-slate-400 py-8 text-sm">Nenhum orçamento encontrado.</p>}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2"><Star className="text-amber-500" /> Avaliar Serviços Realizados</CardTitle></CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {paidBudgets.length > 0 ? paidBudgets.map(b => {
+              const review = reviews.find(r => r.budgetId === b.id);
+              return (
+                <div key={b.id} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="font-bold text-slate-800">OS #{b.number}</p>
+                      <p className="text-xs text-slate-500">{new Date(b.createdAt).toLocaleDateString()}</p>
+                    </div>
+                    {!review && (
+                      <Button size="sm" className="bg-blue-600" onClick={() => { setSelectedBudgetId(b.id); setIsReviewModalOpen(true); }}>Avaliar</Button>
+                    )}
+                  </div>
+                  
+                  {review && (
+                    <div className="mt-3 pt-3 border-t border-slate-200">
+                      <div className="flex gap-1 mb-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} size={14} className={i < review.rating ? "text-amber-400" : "text-slate-200"} fill="currentColor" />
+                        ))}
+                      </div>
+                      <p className="text-xs text-slate-600 italic">"{review.comment}"</p>
+                    </div>
+                  )}
+                </div>
+              );
+            }) : <p className="text-center text-slate-400 py-8 text-sm">Nenhum serviço concluído para avaliar.</p>}
+          </div>
+        </CardContent>
+      </Card>
 
       <Dialog open={isReviewModalOpen} onOpenChange={setIsReviewModalOpen}>
         <DialogContent className="sm:max-w-md">
