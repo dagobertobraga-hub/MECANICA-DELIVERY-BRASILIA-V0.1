@@ -162,8 +162,8 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [professionals, setProfessionals] = useState<Professional[]>(() => {
     const saved = localStorage.getItem('mecanica_professionals_v4');
     return saved ? JSON.parse(saved) : [
-      { id: 'p1', name: 'DAGOBERTO BRAGA', role: 'MECÂNICO MASTER', commissionRate: 10 },
-      { id: 'p2', name: 'RICARDO SILVA', role: 'AUXILIAR TÉCNICO', commissionRate: 5 }
+      { id: 'p1', name: 'DAGOBERTO BRAGA', role: 'MECÂNICO MASTER', commissionRate: 10, permission: 'GRAVAÇÃO' },
+      { id: 'p2', name: 'RICARDO SILVA', role: 'AUXILIAR TÉCNICO', commissionRate: 5, permission: 'LEITURA' }
     ];
   });
 

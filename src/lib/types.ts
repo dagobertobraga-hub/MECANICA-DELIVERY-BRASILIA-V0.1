@@ -13,6 +13,7 @@ export interface Professional {
   name: string;
   role: string;
   commissionRate: number; // Porcentagem (ex: 10 para 10%)
+  permission: 'GRAVAÇÃO' | 'LEITURA' | 'SOMENTE CONSULTA';
 }
 
 export interface Client {
