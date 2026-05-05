@@ -7,6 +7,7 @@ import { StorageProvider } from "./context/StorageContext";
 import Index from "./pages/Index";
 import Budgets from "./pages/Budgets";
 import Vehicles from "./pages/Vehicles";
+import Clients from "./pages/Clients";
 import Admins from "./pages/Admins";
 import Schedules from "./pages/Schedules";
 import Professionals from "./pages/Professionals";
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/budgets" element={<Budgets />} />
             <Route path="/vehicles" element={<Vehicles />} />
+            <Route path="/clients" element={<Clients />} />
             <Route path="/admins" element={<Admins />} />
             <Route path="/schedules" element={<Schedules />} />
             <Route path="/professionals" element={<Professionals />} />

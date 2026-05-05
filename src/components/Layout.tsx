@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, Car, Users, LogOut, Menu, X, Calendar, UserCheck, BarChart3, MessageCircle, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, FileText, Car, Users, LogOut, Menu, X, Calendar, UserCheck, BarChart3, MessageCircle, ArrowLeft, UserCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { useStorage } from '@/hooks/use-storage';
@@ -40,6 +40,7 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
     { label: 'Orçamentos', path: '/budgets', icon: FileText, badge: pendingBudgets, badgeColor: 'bg-amber-500' },
     { label: 'Veículos', path: '/vehicles', icon: Car, badge: overdueVehicles, badgeColor: 'bg-red-500' },
+    { label: 'Clientes', path: '/clients', icon: UserCircle },
     { label: 'Agendamentos', path: '/schedules', icon: Calendar, badge: pendingSchedules, badgeColor: 'bg-blue-500' },
     { label: 'Equipe', path: '/professionals', icon: UserCheck },
     { label: 'Relatórios', path: '/reports', icon: BarChart3 },

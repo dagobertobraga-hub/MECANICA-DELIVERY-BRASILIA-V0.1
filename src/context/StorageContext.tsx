@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Budget, Vehicle, Admin, Schedule, Professional, Review, BudgetItem } from '../lib/types';
+import { Budget, Vehicle, Admin, Schedule, Professional, Review, BudgetItem, Client } from '../lib/types';
 
 interface StorageContextType {
   budgets: Budget[];
@@ -14,6 +14,8 @@ interface StorageContextType {
   setProfessionals: React.Dispatch<React.SetStateAction<Professional[]>>;
   reviews: Review[];
   setReviews: React.Dispatch<React.SetStateAction<Review[]>>;
+  clients: Client[];
+  setClients: React.Dispatch<React.SetStateAction<Client[]>>;
 }
 
 const StorageContext = createContext<StorageContextType | undefined>(undefined);
@@ -23,12 +25,27 @@ const generateMockData = () => {
   const budgets: Budget[] = [];
   const schedules: Schedule[] = [];
   const reviews: Review[] = [];
+  const clients: Client[] = [];
   
-  const clients = [
+  const clientNames = [
     'JOÃO SILVA', 'MARIA OLIVEIRA', 'CARLOS SOUZA', 'ANA COSTA', 'ROBERTO LIMA',
-    'FERNANDA DIAS', 'PAULO REIS', 'JULIANA MELLO', 'MARCOS ANTÔNIO', 'BEATRIZ LOPES',
-    'GUSTAVO HENRIQUE', 'LUCIANA GOMES', 'RICARDO ALVES', 'SÉRGIO MORAES', 'CAMILA ROCHA'
+    'FERNANDA DIAS', 'PAULO REIS', 'JULIANA MELLO', 'MARCOS ANTÔNIO', 'BEATRIZ LOPES'
   ];
+
+  // Gerar Clientes
+  clientNames.forEach((name, i) => {
+    clients.push({
+      id: `c${i}`,
+      name: name,
+      phone: `(61) 9${Math.floor(91000000 + Math.random() * 8000000)}`,
+      document: `${Math.floor(100 + Math.random() * 899)}.${Math.floor(100 + Math.random() * 899)}.${Math.floor(100 + Math.random() * 899)}-${Math.floor(10 + Math.random() * 89)}`,
+      address: `RUA ${i + 1}, LOTE ${i * 10}`,
+      city: 'BRASÍLIA',
+      state: 'DF',
+      zipCode: '72000-000',
+      createdAt: new Date().toISOString()
+    });
+  });
 
   const models = [
     'TOYOTA COROLLA', 'HONDA CIVIC', 'VW GOL', 'FIAT TORO', 'JEEP COMPASS', 
@@ -40,7 +57,7 @@ const generateMockData = () => {
 
   // Gerar 40 Veículos
   for (let i = 0; i < 40; i++) {
-    const clientIndex = i % clients.length;
+    const clientIndex = i % clientNames.length;
     const plate = `BRA${i}X${Math.floor(10 + Math.random() * 89)}`;
     const km = Math.floor(Math.random() * 120000) + 10000;
     
@@ -48,7 +65,7 @@ const generateMockData = () => {
       id: `v${i}`,
       plate: plate,
       model: models[i % models.length] + ' ' + (2016 + (i % 8)),
-      clientName: clients[clientIndex],
+      clientName: clientNames[clientIndex],
       clientPhone: `(61) 9${Math.floor(91000000 + Math.random() * 8000000)}`,
       password: '1234',
       currentKm: km,
@@ -115,7 +132,7 @@ const generateMockData = () => {
     });
   }
 
-  return { vehicles, budgets, schedules, reviews };
+  return { vehicles, budgets, schedules, reviews, clients };
 };
 
 export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -124,7 +141,6 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [vehicles, setVehicles] = useState<Vehicle[]>(() => {
     const saved = localStorage.getItem('mecanica_vehicles_v4');
     const data = saved ? JSON.parse(saved) : mock.vehicles;
-    // Força a senha 1234 para todos os veículos carregados
     return data.map((v: Vehicle) => ({ ...v, password: '1234' }));
   });
 
@@ -156,12 +172,18 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return saved ? JSON.parse(saved) : mock.reviews;
   });
 
+  const [clients, setClients] = useState<Client[]>(() => {
+    const saved = localStorage.getItem('mecanica_clients_v4');
+    return saved ? JSON.parse(saved) : mock.clients;
+  });
+
   useEffect(() => { localStorage.setItem('mecanica_vehicles_v4', JSON.stringify(vehicles)); }, [vehicles]);
   useEffect(() => { localStorage.setItem('mecanica_budgets_v4', JSON.stringify(budgets)); }, [budgets]);
   useEffect(() => { localStorage.setItem('mecanica_admins_v4', JSON.stringify(admins)); }, [admins]);
   useEffect(() => { localStorage.setItem('mecanica_schedules_v4', JSON.stringify(schedules)); }, [schedules]);
   useEffect(() => { localStorage.setItem('mecanica_professionals_v4', JSON.stringify(professionals)); }, [professionals]);
   useEffect(() => { localStorage.setItem('mecanica_reviews_v4', JSON.stringify(reviews)); }, [reviews]);
+  useEffect(() => { localStorage.setItem('mecanica_clients_v4', JSON.stringify(clients)); }, [clients]);
 
   return (
     <StorageContext.Provider value={{ 
@@ -170,7 +192,8 @@ export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ child
       admins, setAdmins, 
       schedules, setSchedules,
       professionals, setProfessionals,
-      reviews, setReviews
+      reviews, setReviews,
+      clients, setClients
     }}>
       {children}
     </StorageContext.Provider>

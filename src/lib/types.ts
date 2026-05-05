@@ -15,6 +15,20 @@ export interface Professional {
   commissionRate: number; // Porcentagem (ex: 10 para 10%)
 }
 
+export interface Client {
+  id: string;
+  name: string;
+  phone: string;
+  document: string; // CPF ou CNPJ
+  address: string;
+  complement?: string;
+  neighborhood?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  createdAt: string;
+}
+
 export interface Budget {
   id: string;
   number: string;
