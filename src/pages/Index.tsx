@@ -5,12 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils-format';
-import { TrendingUp, AlertTriangle, CheckCircle2, DollarSign, Calendar, ArrowRight, Users, Star } from 'lucide-react';
+import { TrendingUp, AlertTriangle, CheckCircle2, DollarSign, Calendar, ArrowRight, Users, Star, UserCheck } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Index = () => {
-  const { budgets, vehicles, schedules, reviews } = useStorage();
+  const { budgets, vehicles, schedules, reviews, professionals } = useStorage();
+  const navigate = useNavigate();
 
   const totalRevenue = budgets
     .filter(b => b.status === 'Pago')
@@ -25,10 +26,10 @@ const Index = () => {
   const pendingSchedules = schedules.filter(s => s.status === 'Pendente');
 
   const statusData = [
-    { name: 'Aberto', value: budgets.filter(b => b.status === 'Aberto').length, color: '#3b82f6' },
-    { name: 'Aprovado', value: budgets.filter(b => b.status === 'Aprovado').length, color: '#10b981' },
-    { name: 'Pago', value: budgets.filter(b => b.status === 'Pago').length, color: '#8b5cf6' },
-    { name: 'Recusado', value: budgets.filter(b => b.status === 'Recusado').length, color: '#ef4444' },
+    { name: 'Aberto', value: budgets.filter(b => b.status === 'Aberto').length, color: '#3b82f6', path: '/budgets?filter=pendentes' },
+    { name: 'Aprovado', value: budgets.filter(b => b.status === 'Aprovado').length, color: '#10b981', path: '/budgets' },
+    { name: 'Pago', value: budgets.filter(b => b.status === 'Pago').length, color: '#8b5cf6', path: '/reports?tab=faturamento' },
+    { name: 'Recusado', value: budgets.filter(b => b.status === 'Recusado').length, color: '#ef4444', path: '/budgets' },
   ];
 
   const vehicleStats = [
@@ -56,7 +57,7 @@ const Index = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {pendingSchedules.slice(0, 3).map((s) => (
-                <div key={s.id} className="bg-white p-3 rounded-lg border border-amber-100 shadow-sm">
+                <div key={s.id} className="bg-white p-3 rounded-lg border border-amber-100 shadow-sm cursor-pointer hover:bg-amber-50 transition-colors" onClick={() => navigate('/schedules')}>
                   <p className="font-bold text-sm">{s.clientName}</p>
                   <p className="text-xs text-slate-500">{s.vehiclePlate} • {new Date(s.date).toLocaleDateString()} às {s.time}</p>
                 </div>
@@ -97,7 +98,7 @@ const Index = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/budgets')}>
           <CardHeader><CardTitle>Status dos Orçamentos</CardTitle></CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -114,7 +115,7 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/vehicles?filter=vencidos')}>
           <CardHeader><CardTitle>Saúde da Frota</CardTitle></CardHeader>
           <CardContent className="h-[300px] flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
@@ -142,13 +143,13 @@ const Index = () => {
           <CardContent>
             <div className="space-y-3">
               {vehicles.filter(v => (v.lastOilChangeKm + v.oilIntervalKm) <= v.currentKm).slice(0, 5).map(v => (
-                <div key={v.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100">
+                <div key={v.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100 cursor-pointer hover:bg-red-100 transition-colors" onClick={() => navigate(`/vehicles?search=${v.plate}`)}>
                   <div>
                     <p className="font-bold text-red-700">{v.plate}</p>
                     <p className="text-xs text-red-600">{v.model} - {v.clientName}</p>
                   </div>
-                  <Button size="sm" variant="outline" className="text-red-700 border-red-200" asChild>
-                    <Link to={`/vehicles?search=${v.plate}`}>Ver Detalhes</Link>
+                  <Button size="sm" variant="outline" className="text-red-700 border-red-200">
+                    Ver Detalhes
                   </Button>
                 </div>
               ))}
@@ -156,7 +157,7 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/reports?tab=reviews')}>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Avaliações</CardTitle>
             <Star className="text-amber-400" fill="currentColor" />

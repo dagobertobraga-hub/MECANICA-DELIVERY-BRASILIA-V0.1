@@ -9,12 +9,15 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
-  const { schedules } = useStorage();
+  const { schedules, budgets, vehicles } = useStorage();
   
   const userRole = localStorage.getItem('user_role');
   const isAdmin = userRole === 'admin';
   
+  // Contadores para Badges
   const pendingSchedules = schedules.filter(s => s.status === 'Pendente').length;
+  const pendingBudgets = budgets.filter(b => ['Aberto', 'Em Negociação'].includes(b.status)).length;
+  const overdueVehicles = vehicles.filter(v => (v.lastOilChangeKm + v.oilIntervalKm) <= v.currentKm).length;
 
   useEffect(() => {
     if (!userRole && location.pathname !== '/login') {
@@ -35,9 +38,9 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
 
   const navItems = isAdmin ? [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { label: 'Orçamentos', path: '/budgets', icon: FileText },
-    { label: 'Veículos', path: '/vehicles', icon: Car },
-    { label: 'Agendamentos', path: '/schedules', icon: Calendar, badge: pendingSchedules },
+    { label: 'Orçamentos', path: '/budgets', icon: FileText, badge: pendingBudgets, badgeColor: 'bg-amber-500' },
+    { label: 'Veículos', path: '/vehicles', icon: Car, badge: overdueVehicles, badgeColor: 'bg-red-500' },
+    { label: 'Agendamentos', path: '/schedules', icon: Calendar, badge: pendingSchedules, badgeColor: 'bg-blue-500' },
     { label: 'Equipe', path: '/professionals', icon: UserCheck },
     { label: 'Relatórios', path: '/reports', icon: BarChart3 },
     { label: 'Admins', path: '/admins', icon: Users },
@@ -90,7 +93,10 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
                   {item.label}
                 </div>
                 {item.badge && item.badge > 0 && (
-                  <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">
+                  <span className={cn(
+                    "text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse",
+                    item.badgeColor || "bg-red-500"
+                  )}>
                     {item.badge}
                   </span>
                 )}
