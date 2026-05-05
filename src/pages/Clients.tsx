@@ -5,17 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, Trash2, Edit2, UserPlus, MapPin, Phone, CreditCard } from 'lucide-react';
+import { Plus, Search, Trash2, Edit2, UserPlus, MapPin, Phone, CreditCard, Eye, Car, FileText, Calendar } from 'lucide-react';
 import { Client } from '@/lib/types';
-import { toUpperCase, maskPhone } from '@/lib/utils-format';
+import { toUpperCase, maskPhone, formatCurrency } from '@/lib/utils-format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { showSuccess } from '@/utils/toast';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 const Clients = () => {
-  const { clients, setClients } = useStorage();
+  const { clients, setClients, vehicles, budgets } = useStorage();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [viewingClient, setViewingClient] = useState<Client | null>(null);
 
   const [formData, setFormData] = useState<Partial<Client>>({
     name: '', phone: '', document: '', address: '', complement: '', neighborhood: '', city: '', state: '', zipCode: ''
@@ -51,6 +55,15 @@ const Clients = () => {
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     c.document.includes(searchTerm)
   );
+
+  const getClientStats = (clientName: string) => {
+    const clientVehicles = vehicles.filter(v => v.clientName === clientName);
+    const clientBudgets = budgets.filter(b => b.clientName === clientName);
+    const totalSpent = clientBudgets.filter(b => b.status === 'Pago').reduce((acc, b) => 
+      acc + b.items.reduce((sum, i) => sum + (i.quantity * i.unitValue), 0), 0
+    );
+    return { vehicles: clientVehicles, budgets: clientBudgets, totalSpent };
+  };
 
   return (
     <Layout isAdmin={true}>
@@ -125,7 +138,7 @@ const Clients = () => {
           </TableHeader>
           <TableBody>
             {filteredClients.map(client => (
-              <TableRow key={client.id}>
+              <TableRow key={client.id} className="cursor-pointer hover:bg-slate-50" onClick={() => { setViewingClient(client); setIsViewModalOpen(true); }}>
                 <TableCell>
                   <div className="flex flex-col">
                     <span className="font-bold">{client.name}</span>
@@ -141,8 +154,11 @@ const Clients = () => {
                     <span>{client.city} - {client.state}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                   <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => { setViewingClient(client); setIsViewModalOpen(true); }}>
+                      <Eye size={16} className="text-blue-600" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => { setEditingClient(client); setFormData(client); setIsModalOpen(true); }}>
                       <Edit2 size={16} />
                     </Button>
@@ -156,6 +172,131 @@ const Clients = () => {
           </TableBody>
         </Table>
       </Card>
+
+      {/* Modal de Visualização Detalhada */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          {viewingClient && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-black text-blue-700 tracking-tighter uppercase">
+                  {viewingClient.name}
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                <div className="md:col-span-2 space-y-6">
+                  <section>
+                    <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
+                      <UserPlus size={14} /> Informações Pessoais
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Documento</p>
+                        <p className="font-bold text-slate-700">{viewingClient.document || 'NÃO INFORMADO'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Telefone</p>
+                        <p className="font-bold text-slate-700">{viewingClient.phone || 'NÃO INFORMADO'}</p>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
+                      <MapPin size={14} /> Endereço Completo
+                    </h3>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Logradouro</p>
+                        <p className="font-bold text-slate-700">{viewingClient.address}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">Complemento</p>
+                          <p className="font-bold text-slate-700">{viewingClient.complement || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">Bairro</p>
+                          <p className="font-bold text-slate-700">{viewingClient.neighborhood || '-'}</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">Cidade</p>
+                          <p className="font-bold text-slate-700">{viewingClient.city}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">Estado</p>
+                          <p className="font-bold text-slate-700">{viewingClient.state}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">CEP</p>
+                          <p className="font-bold text-slate-700">{viewingClient.zipCode}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+
+                <div className="space-y-6">
+                  <section>
+                    <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
+                      <TrendingUp size={14} /> Resumo de Atividade
+                    </h3>
+                    <div className="space-y-3">
+                      {(() => {
+                        const stats = getClientStats(viewingClient.name);
+                        return (
+                          <>
+                            <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                              <p className="text-[10px] font-bold text-blue-600 uppercase">Total Investido</p>
+                              <p className="text-xl font-black text-blue-700">{formatCurrency(stats.totalSpent)}</p>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                              <p className="text-[10px] font-bold text-slate-500 uppercase">Veículos Cadastrados</p>
+                              <p className="text-lg font-bold text-slate-700 flex items-center gap-2">
+                                <Car size={16} /> {stats.vehicles.length}
+                              </p>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                              <p className="text-[10px] font-bold text-slate-500 uppercase">Total de Orçamentos</p>
+                              <p className="text-lg font-bold text-slate-700 flex items-center gap-2">
+                                <FileText size={16} /> {stats.budgets.length}
+                              </p>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
+                      <Calendar size={14} /> Cadastro
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Cliente desde: <span className="font-bold">{new Date(viewingClient.createdAt).toLocaleDateString('pt-BR')}</span>
+                    </p>
+                  </section>
+                </div>
+              </div>
+
+              <div className="mt-8 flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>Fechar</Button>
+                <Button className="bg-blue-600" onClick={() => { 
+                  setIsViewModalOpen(false); 
+                  setEditingClient(viewingClient); 
+                  setFormData(viewingClient); 
+                  setIsModalOpen(true); 
+                }}>
+                  <Edit2 size={16} className="mr-2" /> Editar Dados
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
