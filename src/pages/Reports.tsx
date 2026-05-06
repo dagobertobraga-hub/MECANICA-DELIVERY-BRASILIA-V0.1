@@ -13,12 +13,13 @@ import { generateBudgetPDF } from '@/lib/pdf-generator';
 import { 
   FileText, Car, Calendar, UserCheck, DollarSign, 
   Search, FilterX, Users, TrendingUp, FileDown, 
-  MessageSquare, Edit2, Trash2, CheckCircle2, Star, Plus
+  MessageSquare, Edit2, Trash2, CheckCircle2, Star, Plus, Info
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { showSuccess } from '@/utils/toast';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from '@/lib/utils';
 
 const Reports = () => {
@@ -80,7 +81,6 @@ const Reports = () => {
     acc + b.items.reduce((sum, i) => sum + (i.quantity * i.unitValue), 0), 0
   );
 
-  // ... resto do componente (handleSaveManualReview, handleDownloadPDF, handleWhatsAppOffice) ...
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [newReview, setNewReview] = useState({
     clientName: '',
@@ -209,6 +209,30 @@ const Reports = () => {
                       <TableCell className="text-right font-bold text-green-600">{formatCurrency(b.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0))}</TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center gap-1">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" size="icon" className="text-blue-600">
+                                <Info size={16} />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80">
+                              <div className="space-y-2">
+                                <h4 className="font-bold text-sm border-b pb-1">Itens do Orçamento #{b.number}</h4>
+                                <div className="max-h-40 overflow-y-auto space-y-1">
+                                  {b.items.map((item: any) => (
+                                    <div key={item.id} className="flex justify-between text-[10px] p-1 bg-slate-50 rounded">
+                                      <span className="truncate flex-1 mr-2">{item.quantity}x {item.description}</span>
+                                      <span className="font-bold">{formatCurrency(item.quantity * item.unitValue)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="pt-2 border-t flex justify-between text-xs font-bold">
+                                  <span>TOTAL:</span>
+                                  <span className="text-blue-700">{formatCurrency(b.items.reduce((acc: number, i: any) => acc + (i.quantity * i.unitValue), 0))}</span>
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button variant="ghost" size="icon" onClick={() => handleDownloadPDF(b)}><FileDown size={16} /></Button>
@@ -231,6 +255,7 @@ const Reports = () => {
           </Card>
         </TabsContent>
 
+        {/* ... resto do componente permanece igual ... */}
         <TabsContent value="reviews">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-slate-700 uppercase text-sm">Histórico de Avaliações</h3>
