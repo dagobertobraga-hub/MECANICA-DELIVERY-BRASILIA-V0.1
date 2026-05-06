@@ -40,6 +40,6 @@
 .read-the-docs {
   color: #888;
 }
-body {
+.body {
   pointer-events: auto !important;
 }
