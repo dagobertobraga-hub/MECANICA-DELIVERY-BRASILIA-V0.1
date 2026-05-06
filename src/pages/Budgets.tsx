@@ -29,9 +29,17 @@ const Budgets = () => {
   const [openSearch, setOpenSearch] = useState(false);
   const OFFICE_PHONE = "5561991386470";
 
-  const [formData, setFormData] = useState<Partial<Budget>>({
-    clientName: '', clientPhone: '', vehiclePlate: '', km: 0, status: 'Aberto', items: [], professionalId: ''
-  });
+  const initialFormData: Partial<Budget> = {
+    clientName: '', 
+    clientPhone: '', 
+    vehiclePlate: '', 
+    km: 0, 
+    status: 'Aberto', 
+    items: [], 
+    professionalId: ''
+  };
+
+  const [formData, setFormData] = useState<Partial<Budget>>(initialFormData);
 
   const [newItem, setNewItem] = useState({
     description: '', quantity: 1, unitValue: "R$ 0,00", type: 'Peça'
@@ -104,7 +112,7 @@ const Budgets = () => {
     }
     setIsModalOpen(false);
     setEditingBudget(null);
-    setFormData({ status: 'Aberto', items: [] });
+    setFormData(initialFormData);
     showSuccess('Orçamento salvo!');
   };
 
@@ -181,7 +189,7 @@ const Budgets = () => {
               <FilterX className="mr-2" size={18} /> Limpar Filtro
             </Button>
           )}
-          <Dialog open={isModalOpen} onOpenChange={(open) => { setIsModalOpen(open); if (!open) { setEditingBudget(null); setFormData({ status: 'Aberto', items: [] }); } }}>
+          <Dialog open={isModalOpen} onOpenChange={(open) => { setIsModalOpen(open); if (!open) { setEditingBudget(null); setFormData(initialFormData); } }}>
             <DialogTrigger asChild><Button className="bg-blue-600"><Plus className="mr-2" /> Novo Orçamento</Button></DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>{editingBudget ? 'Editar Orçamento' : 'Novo Orçamento'}</DialogTitle></DialogHeader>
@@ -256,14 +264,14 @@ const Budgets = () => {
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Profissional Responsável</label>
                   <Select value={formData.professionalId} onValueChange={v => setFormData({...formData, professionalId: v})}>
                     <SelectTrigger><SelectValue placeholder="SELECIONE..." /></SelectTrigger>
-                    <SelectContent>{professionals.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                    <SelectContent position="popper">{professionals.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Status do Orçamento</label>
                   <Select value={formData.status} onValueChange={v => setFormData({...formData, status: v as BudgetStatus})}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{['Rascunho', 'Aberto', 'Em Negociação', 'Em Andamento', 'Aprovado', 'Concluído', 'Pago', 'Recusado'].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                    <SelectTrigger><SelectValue placeholder="SELECIONE O STATUS" /></SelectTrigger>
+                    <SelectContent position="popper">{['Rascunho', 'Aberto', 'Em Negociação', 'Em Andamento', 'Aprovado', 'Concluído', 'Pago', 'Recusado'].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
               </div>
@@ -287,7 +295,7 @@ const Budgets = () => {
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Tipo</label>
                     <Select value={newItem.type} onValueChange={v => setNewItem({...newItem, type: v as any})}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="Peça">Peça</SelectItem><SelectItem value="Serviço">Serviço</SelectItem></SelectContent>
+                      <SelectContent position="popper"><SelectItem value="Peça">Peça</SelectItem><SelectItem value="Serviço">Serviço</SelectItem></SelectContent>
                     </Select>
                   </div>
                   <div className="md:col-span-1">
