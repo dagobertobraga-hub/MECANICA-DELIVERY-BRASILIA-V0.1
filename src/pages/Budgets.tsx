@@ -258,20 +258,29 @@ const Budgets = () => {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Quilometragem (KM)</label>
-                  <Input type="number" value={formData.km} onChange={e => setFormData({...formData, km: Number(e.target.value)})} placeholder="0" />
+                  <Input 
+                    type="text" 
+                    inputMode="numeric"
+                    value={formData.km === 0 ? '' : formData.km} 
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setFormData({...formData, km: val === '' ? 0 : Number(val)});
+                    }} 
+                    placeholder="0" 
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Profissional Responsável</label>
                   <Select value={formData.professionalId} onValueChange={v => setFormData({...formData, professionalId: v})}>
                     <SelectTrigger><SelectValue placeholder="SELECIONE..." /></SelectTrigger>
-                    <SelectContent position="popper">{professionals.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                    <SelectContent>{professionals.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Status do Orçamento</label>
                   <Select value={formData.status} onValueChange={v => setFormData({...formData, status: v as BudgetStatus})}>
                     <SelectTrigger><SelectValue placeholder="SELECIONE O STATUS" /></SelectTrigger>
-                    <SelectContent position="popper">{['Rascunho', 'Aberto', 'Em Negociação', 'Em Andamento', 'Aprovado', 'Concluído', 'Pago', 'Recusado'].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                    <SelectContent>{['Rascunho', 'Aberto', 'Em Negociação', 'Em Andamento', 'Aprovado', 'Concluído', 'Pago', 'Recusado'].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
               </div>
@@ -285,7 +294,16 @@ const Budgets = () => {
                   </div>
                   <div className="md:col-span-2 space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Qtd</label>
-                    <Input type="number" placeholder="1" value={newItem.quantity} onChange={e => setNewItem({...newItem, quantity: Number(e.target.value)})} />
+                    <Input 
+                      type="text" 
+                      inputMode="numeric"
+                      placeholder="1" 
+                      value={newItem.quantity} 
+                      onChange={e => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setNewItem({...newItem, quantity: val === '' ? 1 : Number(val)});
+                      }} 
+                    />
                   </div>
                   <div className="md:col-span-2 space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Vlr. Unit</label>
@@ -295,7 +313,7 @@ const Budgets = () => {
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Tipo</label>
                     <Select value={newItem.type} onValueChange={v => setNewItem({...newItem, type: v as any})}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent position="popper"><SelectItem value="Peça">Peça</SelectItem><SelectItem value="Serviço">Serviço</SelectItem></SelectContent>
+                      <SelectContent><SelectItem value="Peça">Peça</SelectItem><SelectItem value="Serviço">Serviço</SelectItem></SelectContent>
                     </Select>
                   </div>
                   <div className="md:col-span-1">
