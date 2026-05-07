@@ -37,6 +37,7 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
 
   const navItems = isAdmin ? [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { label: 'Orçamentos', path: '/budgets', icon: FileText },
     { label: 'Veículos', path: '/vehicles', icon: Car, badge: overdueVehicles, badgeColor: 'bg-red-500' },
     { label: 'Clientes', path: '/clients', icon: UserCircle },
     { label: 'Agendamentos', path: '/schedules', icon: Calendar, badge: pendingSchedules, badgeColor: 'bg-blue-500' },
