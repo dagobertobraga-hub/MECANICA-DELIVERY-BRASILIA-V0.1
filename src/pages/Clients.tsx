@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, Trash2, Edit2, UserPlus, MapPin, Phone, CreditCard, Eye, Car, FileText, Calendar, TrendingUp } from 'lucide-react';
+import { Plus, Search, Trash2, Edit2, UserPlus, MapPin, Phone, CreditCard, Eye, Car, FileText, Calendar, TrendingUp, Mail } from 'lucide-react';
 import { Client } from '@/lib/types';
 import { toUpperCase, maskPhone, formatCurrency } from '@/lib/utils-format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -22,7 +22,7 @@ const Clients = () => {
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
 
   const [formData, setFormData] = useState<Partial<Client>>({
-    name: '', phone: '', document: '', address: '', complement: '', neighborhood: '', city: '', state: '', zipCode: ''
+    name: '', phone: '', email: '', document: '', address: '', complement: '', neighborhood: '', city: '', state: '', zipCode: ''
   });
 
   const handleSave = () => {
@@ -34,6 +34,7 @@ const Clients = () => {
         id: Math.random().toString(36).substr(2, 9),
         name: toUpperCase(formData.name || ''),
         phone: formData.phone || '',
+        email: formData.email?.toLowerCase() || '',
         document: formData.document || '',
         address: toUpperCase(formData.address || ''),
         complement: toUpperCase(formData.complement || ''),
@@ -53,7 +54,8 @@ const Clients = () => {
 
   const filteredClients = clients.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    c.document.includes(searchTerm)
+    c.document.includes(searchTerm) ||
+    c.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getClientStats = (clientName: string) => {
@@ -86,6 +88,10 @@ const Clients = () => {
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 uppercase">Telefone / WhatsApp</label>
                 <Input value={formData.phone} onChange={e => setFormData({...formData, phone: maskPhone(e.target.value)})} placeholder="(00) 00000-0000" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">E-mail</label>
+                <Input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="exemplo@email.com" />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 uppercase">CPF / CNPJ</label>
@@ -123,7 +129,7 @@ const Clients = () => {
 
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-        <Input className="pl-10" placeholder="Buscar por nome ou documento..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+        <Input className="pl-10" placeholder="Buscar por nome, documento ou e-mail..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
       </div>
 
       <Card>
@@ -143,6 +149,7 @@ const Clients = () => {
                   <div className="flex flex-col">
                     <span className="font-bold">{client.name}</span>
                     <span className="text-xs text-slate-500 flex items-center gap-1"><Phone size={10} /> {client.phone}</span>
+                    {client.email && <span className="text-[10px] text-blue-500 flex items-center gap-1"><Mail size={10} /> {client.email}</span>}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -198,6 +205,10 @@ const Clients = () => {
                       <div>
                         <p className="text-[10px] font-bold text-slate-400 uppercase">Telefone</p>
                         <p className="font-bold text-slate-700">{viewingClient.phone || 'NÃO INFORMADO'}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">E-mail</p>
+                        <p className="font-bold text-slate-700">{viewingClient.email || 'NÃO INFORMADO'}</p>
                       </div>
                     </div>
                   </section>

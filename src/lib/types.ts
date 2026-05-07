@@ -26,6 +26,7 @@ export interface Client {
   id: string;
   name: string;
   phone: string;
+  email?: string;
   document: string; // CPF ou CNPJ
   address: string;
   complement?: string;

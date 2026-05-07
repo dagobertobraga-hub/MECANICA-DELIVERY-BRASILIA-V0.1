@@ -37,6 +37,7 @@ const generateMockData = () => {
       id: `c${i}`,
       name: name,
       phone: `(61) 9${Math.floor(91000000 + Math.random() * 8000000)}`,
+      email: `${name.toLowerCase().replace(/\s/g, '.')}@exemplo.com`,
       document: `${Math.floor(100 + Math.random() * 899)}.${Math.floor(100 + Math.random() * 899)}.${Math.floor(100 + Math.random() * 899)}-${Math.floor(10 + Math.random() * 89)}`,
       address: `SDE QUADRA ${Math.floor(Math.random() * 20) + 1}, CONJUNTO ${String.fromCharCode(65 + (i % 6))}, LOTE ${i + 1}`,
       city: 'BRASÍLIA',
@@ -149,7 +150,7 @@ const generateMockData = () => {
 
 export const StorageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const mock = generateMockData();
-  const VERSION = 'v5'; // Incrementado para resetar dados antigos
+  const VERSION = 'v6'; // Incrementado para resetar dados e incluir e-mail
 
   const [vehicles, setVehicles] = useState<Vehicle[]>(() => {
     const saved = localStorage.getItem(`mecanica_vehicles_${VERSION}`);
