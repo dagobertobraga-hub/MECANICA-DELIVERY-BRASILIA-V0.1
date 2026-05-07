@@ -5,12 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, Check, ChevronsUpDown, FilterX } from 'lucide-react';
+import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, Check, ChevronsUpDown, FilterX, User, Activity, Settings } from 'lucide-react';
 import { Budget, BudgetItem, BudgetStatus, Vehicle } from '@/lib/types';
 import { formatCurrency, toUpperCase, formatPlate, maskPhone, maskCurrency, parseCurrencyToNumber } from '@/lib/utils-format';
 import { generateBudgetPDF } from '@/lib/pdf-generator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { showError, showSuccess } from '@/utils/toast';
@@ -271,37 +270,53 @@ const Budgets = () => {
                     placeholder="0" 
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Profissional Responsável</label>
-                  <Select 
-                    value={formData.professionalId || ""} 
-                    onValueChange={v => setFormData(prev => ({...prev, professionalId: v}))}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="SELECIONE..." />
-                    </SelectTrigger>
-                    <SelectContent position="popper" className="z-[100]">
-                      {professionals.map(p => (
-                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 mt-6">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-2">
+                    <User size={14} /> Profissional Responsável
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {professionals.map(p => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setFormData(prev => ({...prev, professionalId: p.id}))}
+                        className={cn(
+                          "px-4 py-2 rounded-lg border text-xs font-bold transition-all",
+                          formData.professionalId === p.id 
+                            ? "bg-blue-600 border-blue-600 text-white shadow-md" 
+                            : "bg-white border-slate-200 text-slate-600 hover:border-blue-300"
+                        )}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Status do Orçamento</label>
-                  <Select 
-                    value={formData.status || "Aberto"} 
-                    onValueChange={v => setFormData(prev => ({...prev, status: v as BudgetStatus}))}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="SELECIONE O STATUS" />
-                    </SelectTrigger>
-                    <SelectContent position="popper" className="z-[100]">
-                      {budgetStatuses.map(s => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-2">
+                    <Activity size={14} /> Status do Orçamento
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {budgetStatuses.map(s => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setFormData(prev => ({...prev, status: s}))}
+                        className={cn(
+                          "px-3 py-2 rounded-lg border text-[10px] font-bold transition-all text-center",
+                          formData.status === s 
+                            ? "bg-slate-800 border-slate-800 text-white shadow-md" 
+                            : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
+                        )}
+                      >
+                        {s.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
               
@@ -331,18 +346,23 @@ const Budgets = () => {
                   </div>
                   <div className="md:col-span-2 space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Tipo</label>
-                    <Select 
-                      value={newItem.type} 
-                      onValueChange={v => setNewItem({...newItem, type: v as any})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent position="popper" className="z-[100]">
-                        <SelectItem value="Peça">Peça</SelectItem>
-                        <SelectItem value="Serviço">Serviço</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-1">
+                      {['Peça', 'Serviço'].map(t => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setNewItem({...newItem, type: t as any})}
+                          className={cn(
+                            "flex-1 py-2 rounded-md border text-[10px] font-bold transition-all",
+                            newItem.type === t 
+                              ? "bg-blue-600 border-blue-600 text-white" 
+                              : "bg-white border-slate-200 text-slate-600"
+                          )}
+                        >
+                          {t.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div className="md:col-span-1">
                     <Button onClick={addItem} className="w-full bg-slate-800"><Plus size={18} /></Button>
