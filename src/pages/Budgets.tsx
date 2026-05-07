@@ -119,7 +119,7 @@ const Budgets = () => {
   const handleSelectVehicle = (vehicleId: string) => {
     const v = vehicles.find(veh => veh.id === vehicleId);
     if (v) {
-      setFormData({ ...formData, clientName: v.clientName, clientPhone: maskPhone(v.clientPhone), vehiclePlate: v.plate, km: v.currentKm });
+      setFormData(prev => ({ ...prev, clientName: v.clientName, clientPhone: maskPhone(v.clientPhone), vehiclePlate: v.plate, km: v.currentKm }));
       setOpenSearch(false);
       showSuccess('Dados carregados!');
     }
@@ -128,19 +128,19 @@ const Budgets = () => {
   const addItem = () => {
     if (newItem.description && newItem.unitValue) {
       const unitValueNum = parseCurrencyToNumber(newItem.unitValue);
-      setFormData({ ...formData, items: [...(formData.items || []), { 
+      setFormData(prev => ({ ...prev, items: [...(prev.items || []), { 
         id: Math.random().toString(36).substr(2, 9),
         description: newItem.description,
         quantity: newItem.quantity,
         unitValue: unitValueNum,
         type: newItem.type as any
-      }] });
+      }] }));
       setNewItem({ description: '', quantity: 1, unitValue: "R$ 0,00", type: 'Peça' });
     }
   };
 
   const removeItem = (id: string) => {
-    setFormData({ ...formData, items: formData.items?.filter(i => i.id !== id) });
+    setFormData(prev => ({ ...prev, items: prev.items?.filter(i => i.id !== id) }));
   };
 
   const handleDownloadPDF = (budget: Budget) => {
@@ -175,6 +175,8 @@ const Budgets = () => {
     const colors: Record<BudgetStatus, string> = { 'Rascunho': 'bg-slate-100 text-slate-600', 'Aberto': 'bg-blue-100 text-blue-600', 'Em Negociação': 'bg-amber-100 text-amber-600', 'Em Andamento': 'bg-indigo-100 text-indigo-600', 'Aprovado': 'bg-green-100 text-green-700', 'Concluído': 'bg-emerald-100 text-emerald-700', 'Pago': 'bg-purple-100 text-purple-600', 'Recusado': 'bg-red-100 text-red-600' };
     return colors[status];
   };
+
+  const budgetStatuses: BudgetStatus[] = ['Rascunho', 'Aberto', 'Em Negociação', 'Em Andamento', 'Aprovado', 'Concluído', 'Pago', 'Recusado'];
 
   return (
     <Layout isAdmin={true}>
@@ -240,17 +242,17 @@ const Budgets = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Nome do Cliente</label>
-                  <Input value={formData.clientName} onChange={e => setFormData({...formData, clientName: toUpperCase(e.target.value)})} placeholder="NOME COMPLETO" />
+                  <Input value={formData.clientName} onChange={e => setFormData(prev => ({...prev, clientName: toUpperCase(e.target.value)}))} placeholder="NOME COMPLETO" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Telefone / WhatsApp</label>
-                  <Input value={formData.clientPhone} onChange={e => setFormData({...formData, clientPhone: maskPhone(e.target.value)})} placeholder="(00) 00000-0000" />
+                  <Input value={formData.clientPhone} onChange={e => setFormData(prev => ({...prev, clientPhone: maskPhone(e.target.value)}))} placeholder="(00) 00000-0000" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Placa do Veículo</label>
                   <Input 
                     value={formData.vehiclePlate} 
-                    onChange={e => setFormData({...formData, vehiclePlate: formatPlate(e.target.value)})} 
+                    onChange={e => setFormData(prev => ({...prev, vehiclePlate: formatPlate(e.target.value)}))} 
                     placeholder="ABC1D23" 
                     maxLength={7}
                     className="font-mono"
@@ -264,23 +266,41 @@ const Budgets = () => {
                     value={formData.km === 0 ? '' : formData.km} 
                     onChange={e => {
                       const val = e.target.value.replace(/\D/g, '');
-                      setFormData({...formData, km: val === '' ? 0 : Number(val)});
+                      setFormData(prev => ({...prev, km: val === '' ? 0 : Number(val)}));
                     }} 
                     placeholder="0" 
                   />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Profissional Responsável</label>
-                  <Select value={formData.professionalId} onValueChange={v => setFormData({...formData, professionalId: v})}>
-                    <SelectTrigger><SelectValue placeholder="SELECIONE..." /></SelectTrigger>
-                    <SelectContent>{professionals.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                  <Select 
+                    value={formData.professionalId || ""} 
+                    onValueChange={v => setFormData(prev => ({...prev, professionalId: v}))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="SELECIONE..." />
+                    </SelectTrigger>
+                    <SelectContent position="popper" className="z-[100]">
+                      {professionals.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Status do Orçamento</label>
-                  <Select value={formData.status} onValueChange={v => setFormData({...formData, status: v as BudgetStatus})}>
-                    <SelectTrigger><SelectValue placeholder="SELECIONE O STATUS" /></SelectTrigger>
-                    <SelectContent>{['Rascunho', 'Aberto', 'Em Negociação', 'Em Andamento', 'Aprovado', 'Concluído', 'Pago', 'Recusado'].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                  <Select 
+                    value={formData.status || "Aberto"} 
+                    onValueChange={v => setFormData(prev => ({...prev, status: v as BudgetStatus}))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="SELECIONE O STATUS" />
+                    </SelectTrigger>
+                    <SelectContent position="popper" className="z-[100]">
+                      {budgetStatuses.map(s => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
               </div>
@@ -311,9 +331,17 @@ const Budgets = () => {
                   </div>
                   <div className="md:col-span-2 space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Tipo</label>
-                    <Select value={newItem.type} onValueChange={v => setNewItem({...newItem, type: v as any})}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="Peça">Peça</SelectItem><SelectItem value="Serviço">Serviço</SelectItem></SelectContent>
+                    <Select 
+                      value={newItem.type} 
+                      onValueChange={v => setNewItem({...newItem, type: v as any})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent position="popper" className="z-[100]">
+                        <SelectItem value="Peça">Peça</SelectItem>
+                        <SelectItem value="Serviço">Serviço</SelectItem>
+                      </SelectContent>
                     </Select>
                   </div>
                   <div className="md:col-span-1">
