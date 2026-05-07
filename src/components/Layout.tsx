@@ -16,7 +16,6 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
   
   // Contadores para Badges
   const pendingSchedules = schedules.filter(s => s.status === 'Pendente').length;
-  const pendingBudgets = budgets.filter(b => ['Aberto', 'Em Negociação'].includes(b.status)).length;
   const overdueVehicles = vehicles.filter(v => (v.lastOilChangeKm + v.oilIntervalKm) <= v.currentKm).length;
 
   useEffect(() => {
@@ -38,7 +37,6 @@ const Layout = ({ children, isAdmin: propIsAdmin }: { children: React.ReactNode,
 
   const navItems = isAdmin ? [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { label: 'Orçamentos', path: '/budgets', icon: FileText, badge: pendingBudgets, badgeColor: 'bg-amber-500' },
     { label: 'Veículos', path: '/vehicles', icon: Car, badge: overdueVehicles, badgeColor: 'bg-red-500' },
     { label: 'Clientes', path: '/clients', icon: UserCircle },
     { label: 'Agendamentos', path: '/schedules', icon: Calendar, badge: pendingSchedules, badgeColor: 'bg-blue-500' },

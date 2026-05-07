@@ -167,9 +167,8 @@ const Reports = () => {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 mb-8">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-8">
           <TabsTrigger value="faturamento" className="flex gap-2"><DollarSign size={16} /> Faturamento</TabsTrigger>
-          <TabsTrigger value="budgets" className="flex gap-2"><FileText size={16} /> Orçamentos</TabsTrigger>
           <TabsTrigger value="vehicles" className="flex gap-2"><Car size={16} /> Veículos</TabsTrigger>
           <TabsTrigger value="schedules" className="flex gap-2"><Calendar size={16} /> Agendamentos</TabsTrigger>
           <TabsTrigger value="reviews" className="flex gap-2"><Star size={16} /> Avaliações</TabsTrigger>
@@ -239,12 +238,6 @@ const Reports = () => {
                             </TooltipTrigger>
                             <TooltipContent>Baixar PDF</TooltipContent>
                           </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={() => navigate('/budgets')}><Edit2 size={16} /></Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Editar Orçamento</TooltipContent>
-                          </Tooltip>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -255,7 +248,6 @@ const Reports = () => {
           </Card>
         </TabsContent>
 
-        {/* ... resto do componente permanece igual ... */}
         <TabsContent value="reviews">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-slate-700 uppercase text-sm">Histórico de Avaliações</h3>
@@ -319,58 +311,6 @@ const Reports = () => {
                         <Button variant="ghost" size="icon" className="text-red-500" onClick={() => setReviews(reviews.filter(x => x.id !== r.id))}>
                           <Trash2 size={16} />
                         </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="budgets">
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nº</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Placa</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead className="text-center">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredBudgets.map((b) => (
-                    <TableRow key={b.id}>
-                      <TableCell className="font-bold">#{b.number}</TableCell>
-                      <TableCell>{b.clientName}</TableCell>
-                      <TableCell>{b.vehiclePlate}</TableCell>
-                      <TableCell><Badge variant="outline">{b.status}</Badge></TableCell>
-                      <TableCell className="text-right font-bold">{formatCurrency(b.items.reduce((acc, i) => acc + (i.quantity * i.unitValue), 0))}</TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex justify-center gap-1">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={() => handleDownloadPDF(b)}><FileDown size={16} /></Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Baixar PDF</TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={() => handleWhatsAppOffice(`Olá! Segue informações do orçamento #${b.number} do cliente ${b.clientName} (${b.vehiclePlate}).`)} className="text-green-600"><MessageSquare size={16} /></Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Enviar para WhatsApp (Oficina)</TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={() => navigate('/budgets')}><Edit2 size={16} /></Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Editar Orçamento</TooltipContent>
-                          </Tooltip>
-                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
