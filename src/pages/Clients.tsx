@@ -78,7 +78,7 @@ const Clients = () => {
           <DialogTrigger asChild>
             <Button className="bg-blue-600"><UserPlus className="mr-2" /> Novo Cliente</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editingClient ? 'Editar Cliente' : 'Cadastrar Novo Cliente'}</DialogTitle></DialogHeader>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <div className="space-y-1 md:col-span-2">
@@ -122,7 +122,7 @@ const Clients = () => {
                 <Input value={formData.zipCode} onChange={e => setFormData({...formData, zipCode: e.target.value})} placeholder="00000-000" />
               </div>
             </div>
-            <Button onClick={handleSave} className="w-full bg-blue-600 mt-6 h-12 font-bold">Salvar Cliente</Button>
+            <Button onClick={handleSave} className="w-full bg-blue-600 mt-6 h-12 font-bold sticky bottom-0 shadow-lg">Salvar Cliente</Button>
           </DialogContent>
         </Dialog>
       </div>
