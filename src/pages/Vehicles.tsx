@@ -9,7 +9,6 @@ import { Plus, Search, Trash2, Wrench, MessageSquare, Check, ChevronsUpDown, Fil
 import { Vehicle, MaintenanceRecord } from '@/lib/types';
 import { formatCurrency, toUpperCase, formatPlate, maskPhone, maskCurrency, parseCurrencyToNumber } from '@/lib/utils-format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { showSuccess } from '@/utils/toast';
@@ -112,6 +111,8 @@ const Vehicles = () => {
     setSearchTerm('');
     setSearchParams({});
   };
+
+  const maintenanceTypes = ['Óleo', 'Filtro', 'Correia', 'Suspensão', 'Freios', 'Injeção', 'Elétrica', 'Outros'];
 
   return (
     <Layout isAdmin={true}>
@@ -312,15 +313,31 @@ const Vehicles = () => {
               <Input type="date" value={maintenanceForm.date} onChange={e => setMaintenanceForm({...maintenanceForm, date: e.target.value})} />
               <Input type="number" placeholder="KM" value={maintenanceForm.km} onChange={e => setMaintenanceForm({...maintenanceForm, km: Number(e.target.value)})} />
             </div>
-            <Select value={maintenanceForm.type} onValueChange={v => setMaintenanceForm({...maintenanceForm, type: v as any})}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {['Óleo', 'Filtro', 'Correia', 'Suspensão', 'Freios', 'Injeção', 'Elétrica', 'Outros'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">Tipo de Manutenção</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {maintenanceTypes.map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setMaintenanceForm({...maintenanceForm, type: t as any})}
+                    className={cn(
+                      "px-2 py-2 rounded-lg border text-[10px] font-bold transition-all text-center",
+                      maintenanceForm.type === t 
+                        ? "bg-blue-600 border-blue-600 text-white shadow-md" 
+                        : "bg-white border-slate-200 text-slate-600 hover:border-blue-300"
+                    )}
+                  >
+                    {t.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <Input placeholder="DESCRIÇÃO" value={maintenanceForm.description} onChange={e => setMaintenanceForm({...maintenanceForm, description: toUpperCase(e.target.value)})} />
             <Input placeholder="VALOR R$" value={maintenanceForm.value} onChange={e => setMaintenanceForm({...maintenanceForm, value: maskCurrency(e.target.value)})} />
-            <Button onClick={handleAddMaintenance} className="w-full bg-blue-600">Salvar</Button>
+            <Button onClick={handleAddMaintenance} className="w-full bg-blue-600 h-12 font-bold">Salvar Manutenção</Button>
           </div>
         </DialogContent>
       </Dialog>

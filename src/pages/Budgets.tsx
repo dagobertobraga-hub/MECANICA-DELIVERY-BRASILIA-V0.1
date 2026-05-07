@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, Check, ChevronsUpDown, FilterX, User, Activity, Settings } from 'lucide-react';
+import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, Check, ChevronsUpDown, FilterX, User, Activity } from 'lucide-react';
 import { Budget, BudgetItem, BudgetStatus, Vehicle } from '@/lib/types';
 import { formatCurrency, toUpperCase, formatPlate, maskPhone, maskCurrency, parseCurrencyToNumber } from '@/lib/utils-format';
 import { generateBudgetPDF } from '@/lib/pdf-generator';
