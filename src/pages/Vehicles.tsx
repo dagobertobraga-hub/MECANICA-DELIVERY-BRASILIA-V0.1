@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Trash2, Wrench, MessageSquare, Check, ChevronsUpDown, FilterX } from 'lucide-react';
-import { Vehicle, MaintenanceRecord } from '@/lib/types';
+import { Vehicle, MaintenanceRecord, Client } from '@/lib/types';
 import { formatCurrency, toUpperCase, formatPlate, maskPhone, maskCurrency, parseCurrencyToNumber } from '@/lib/utils-format';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -18,7 +18,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useSearchParams } from 'react-router-dom';
 
 const Vehicles = () => {
-  const { vehicles, setVehicles } = useStorage();
+  const { vehicles, setVehicles, clients } = useStorage();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const filterParam = searchParams.get('filter');
@@ -36,8 +36,6 @@ const Vehicles = () => {
   const [maintenanceForm, setMaintenanceForm] = useState({
     description: '', km: 0, value: "R$ 0,00", type: 'Outros', date: new Date().toISOString().split('T')[0]
   });
-
-  const uniqueClients = Array.from(new Set(vehicles.map(v => v.clientName))).sort();
 
   const handleSaveVehicle = () => {
     const newVehicle: Vehicle = {
@@ -83,16 +81,13 @@ const Vehicles = () => {
     }
   };
 
-  const handleSelectExistingClient = (name: string) => {
-    const existing = vehicles.find(v => v.clientName === name);
-    if (existing) {
-      setVehicleForm({
-        ...vehicleForm,
-        clientName: existing.clientName,
-        clientPhone: maskPhone(existing.clientPhone)
-      });
-      setOpenSearchClient(false);
-    }
+  const handleSelectExistingClient = (client: Client) => {
+    setVehicleForm({
+      ...vehicleForm,
+      clientName: client.name,
+      clientPhone: maskPhone(client.phone)
+    });
+    setOpenSearchClient(false);
   };
 
   const filteredVehicles = vehicles.filter(v => {
@@ -133,7 +128,7 @@ const Vehicles = () => {
               <DialogHeader><DialogTitle>Cadastrar Veículo</DialogTitle></DialogHeader>
               <div className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Selecionar Cliente Existente</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase">Selecionar Cliente Cadastrado</label>
                   <Popover open={openSearchClient} onOpenChange={setOpenSearchClient}>
                     <PopoverTrigger asChild>
                       <Button
@@ -142,7 +137,7 @@ const Vehicles = () => {
                         aria-expanded={openSearchClient}
                         className="w-full justify-between bg-slate-50 border-blue-100"
                       >
-                        {vehicleForm.clientName || "BUSCAR CLIENTE CADASTRADO..."}
+                        {vehicleForm.clientName || "BUSCAR CLIENTE..."}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
@@ -152,19 +147,19 @@ const Vehicles = () => {
                         <CommandList>
                           <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
                           <CommandGroup>
-                            {uniqueClients.map((client) => (
+                            {clients.map((client) => (
                               <CommandItem
-                                key={client}
-                                value={client}
+                                key={client.id}
+                                value={client.name}
                                 onSelect={() => handleSelectExistingClient(client)}
                               >
                                 <Check
                                   className={cn(
                                     "mr-2 h-4 w-4",
-                                    vehicleForm.clientName === client ? "opacity-100" : "opacity-0"
+                                    vehicleForm.clientName === client.name ? "opacity-100" : "opacity-0"
                                   )}
                                 />
-                                {client}
+                                {client.name}
                               </CommandItem>
                             ))}
                           </CommandGroup>
@@ -241,7 +236,7 @@ const Vehicles = () => {
                           <Badge variant={isOverdue ? "destructive" : "outline"}>{isOverdue ? "VENCIDO" : "EM DIA"}</Badge>
                         </div>
                         <h3 className="text-lg font-medium text-slate-600">{vehicle.model}</h3>
-                        <p className="text-sm text-slate-400">{vehicle.clientName} • {vehicle.clientPhone}</p>
+                        <p className="text-sm text-slate-500">{vehicle.clientName} • {vehicle.clientPhone}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs font-bold text-slate-400 uppercase">KM Atual</p>
@@ -335,7 +330,7 @@ const Vehicles = () => {
               </div>
             </div>
 
-            <Input placeholder="DESCRIÇÃO" value={maintenanceForm.description} onChange={e => setMaintenanceForm({...maintenanceForm, description: toUpperCase(e.target.value)})} />
+            <Input placeholder="DESCRIÇÃO" value={maintenanceForm.description} onChange={e => setMaintenanceForm({...maintenanceForm, description: toUpperCase(maintenanceForm.description || '')})} />
             <Input placeholder="VALOR R$" value={maintenanceForm.value} onChange={e => setMaintenanceForm({...maintenanceForm, value: maskCurrency(e.target.value)})} />
             <Button onClick={handleAddMaintenance} className="w-full bg-blue-600 h-12 font-bold">Salvar Manutenção</Button>
           </div>
