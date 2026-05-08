@@ -79,10 +79,7 @@ const Budgets = () => {
 
     const existingVehicle = vehicles.find(v => v.plate === cleanPlate);
     
-    if (existingVehicle && (formData.km || 0) < existingVehicle.currentKm) {
-      showError(`A quilometragem não pode ser inferior à atual do veículo (${existingVehicle.currentKm.toLocaleString()} KM).`);
-      return;
-    }
+    // Removida a validação de quilometragem inferior para permitir ajustes e orçamentos retroativos
 
     if (!existingVehicle) {
       const newVehicle: Vehicle = {
@@ -101,6 +98,7 @@ const Budgets = () => {
       setVehicles([...vehicles, newVehicle]);
       showSuccess('Novo veículo cadastrado automaticamente!');
     } else if (formData.km && formData.km > existingVehicle.currentKm) {
+      // Só atualiza a KM do veículo se a do orçamento for maior
       setVehicles(vehicles.map(v => v.plate === cleanPlate ? { ...v, currentKm: formData.km || v.currentKm } : v));
     }
 
