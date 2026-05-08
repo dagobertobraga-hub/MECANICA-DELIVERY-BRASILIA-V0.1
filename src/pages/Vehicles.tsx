@@ -37,6 +37,24 @@ const Vehicles = () => {
     description: '', km: 0, value: "R$ 0,00", type: 'Outros', date: new Date().toISOString().split('T')[0]
   });
 
+  // Efeito para abrir o modal automaticamente se vier da tela de clientes
+  useEffect(() => {
+    const action = searchParams.get('action');
+    const clientName = searchParams.get('clientName');
+    const clientPhone = searchParams.get('clientPhone');
+
+    if (action === 'new' && clientName) {
+      setVehicleForm(prev => ({
+        ...prev,
+        clientName: clientName,
+        clientPhone: clientPhone || ''
+      }));
+      setIsVehicleModalOpen(true);
+      // Limpa os parâmetros da URL para não reabrir ao atualizar
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
+
   const handleSaveVehicle = () => {
     const newVehicle: Vehicle = {
       id: Math.random().toString(36).substr(2, 9),

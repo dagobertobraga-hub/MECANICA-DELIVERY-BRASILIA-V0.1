@@ -12,9 +12,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { showSuccess } from '@/utils/toast';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useNavigate } from 'react-router-dom';
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Clients = () => {
   const { clients, setClients, vehicles, budgets } = useStorage();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -50,6 +53,14 @@ const Clients = () => {
     setIsModalOpen(false);
     setEditingClient(null);
     setFormData({});
+  };
+
+  const handleAddVehicle = (client: Client) => {
+    const params = new URLSearchParams();
+    params.set('action', 'new');
+    params.set('clientName', client.name);
+    params.set('clientPhone', client.phone);
+    navigate(`/vehicles?${params.toString()}`);
   };
 
   const filteredClients = clients.filter(c => 
@@ -163,6 +174,14 @@ const Clients = () => {
                 </TableCell>
                 <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                   <div className="flex justify-end gap-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={() => handleAddVehicle(client)}>
+                          <Car size={16} className="text-green-600" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Cadastrar Veículo</TooltipContent>
+                    </Tooltip>
                     <Button variant="ghost" size="icon" onClick={() => { setViewingClient(client); setIsViewModalOpen(true); }}>
                       <Eye size={16} className="text-blue-600" />
                     </Button>
@@ -295,6 +314,9 @@ const Clients = () => {
 
               <div className="mt-8 flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>Fechar</Button>
+                <Button className="bg-green-600" onClick={() => handleAddVehicle(viewingClient)}>
+                  <Car size={16} className="mr-2" /> Cadastrar Veículo
+                </Button>
                 <Button className="bg-blue-600" onClick={() => { 
                   setIsViewModalOpen(false); 
                   setEditingClient(viewingClient); 
