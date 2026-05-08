@@ -46,6 +46,24 @@ const Budgets = () => {
     description: '', quantity: 1, unitValue: "R$ 0,00", type: 'Peça'
   });
 
+  // Efeito para abrir o modal automaticamente se vier da tela de clientes
+  useEffect(() => {
+    const action = searchParams.get('action');
+    const clientName = searchParams.get('clientName');
+    const clientPhone = searchParams.get('clientPhone');
+
+    if (action === 'new' && clientName) {
+      setFormData(prev => ({
+        ...prev,
+        clientName: clientName,
+        clientPhone: clientPhone || ''
+      }));
+      setIsModalOpen(true);
+      // Limpa os parâmetros da URL para não reabrir ao atualizar
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
+
   const calculateTotals = (items: BudgetItem[]) => {
     const parts = items.filter(i => i.type === 'Peça').reduce((acc, i) => acc + (i.quantity * i.unitValue), 0);
     const services = items.filter(i => i.type === 'Serviço').reduce((acc, i) => acc + (i.quantity * i.unitValue), 0);
