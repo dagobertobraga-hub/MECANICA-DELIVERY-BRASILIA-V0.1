@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, Check, ChevronsUpDown, FilterX, User, Activity, Calendar } from 'lucide-react';
+import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, Check, ChevronsUpDown, FilterX, User, Activity, Calendar, Save } from 'lucide-react';
 import { Budget, BudgetItem, BudgetStatus, Vehicle } from '@/lib/types';
 import { formatCurrency, toUpperCase, formatPlate, maskPhone, maskCurrency, parseCurrencyToNumber } from '@/lib/utils-format';
 import { generateBudgetPDF } from '@/lib/pdf-generator';
@@ -26,6 +26,7 @@ const Budgets = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [openSearch, setOpenSearch] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const OFFICE_PHONE = "5561991386470";
 
   const initialFormData: Partial<Budget> = {
@@ -120,6 +121,7 @@ const Budgets = () => {
     setIsModalOpen(false);
     setEditingBudget(null);
     setFormData(initialFormData);
+    setEditingItemId(null);
     showSuccess('Orçamento salvo!');
   };
 
@@ -135,19 +137,46 @@ const Budgets = () => {
   const addItem = () => {
     if (newItem.description && newItem.unitValue) {
       const unitValueNum = parseCurrencyToNumber(newItem.unitValue);
-      setFormData(prev => ({ ...prev, items: [...(prev.items || []), { 
-        id: Math.random().toString(36).substr(2, 9),
+      const itemData = { 
+        id: editingItemId || Math.random().toString(36).substr(2, 9),
         description: newItem.description,
         quantity: newItem.quantity,
         unitValue: unitValueNum,
         type: newItem.type as any
-      }] }));
+      };
+
+      if (editingItemId) {
+        setFormData(prev => ({
+          ...prev,
+          items: prev.items?.map(i => i.id === editingItemId ? itemData : i)
+        }));
+        setEditingItemId(null);
+        showSuccess('Item atualizado!');
+      } else {
+        setFormData(prev => ({ ...prev, items: [...(prev.items || []), itemData] }));
+        showSuccess('Item adicionado!');
+      }
+      
       setNewItem({ description: '', quantity: 1, unitValue: "R$ 0,00", type: 'Peça' });
     }
   };
 
+  const editItem = (item: BudgetItem) => {
+    setEditingItemId(item.id);
+    setNewItem({
+      description: item.description,
+      quantity: item.quantity,
+      unitValue: maskCurrency(item.unitValue),
+      type: item.type
+    });
+  };
+
   const removeItem = (id: string) => {
     setFormData(prev => ({ ...prev, items: prev.items?.filter(i => i.id !== id) }));
+    if (editingItemId === id) {
+      setEditingItemId(null);
+      setNewItem({ description: '', quantity: 1, unitValue: "R$ 0,00", type: 'Peça' });
+    }
   };
 
   const handleDownloadPDF = (budget: Budget) => {
@@ -198,7 +227,7 @@ const Budgets = () => {
               <FilterX className="mr-2" size={18} /> Limpar Filtro
             </Button>
           )}
-          <Dialog open={isModalOpen} onOpenChange={(open) => { setIsModalOpen(open); if (!open) { setEditingBudget(null); setFormData(initialFormData); } }}>
+          <Dialog open={isModalOpen} onOpenChange={(open) => { setIsModalOpen(open); if (!open) { setEditingBudget(null); setFormData(initialFormData); setEditingItemId(null); } }}>
             <DialogTrigger asChild><Button className="bg-blue-600"><Plus className="mr-2" /> Novo Orçamento</Button></DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>{editingBudget ? 'Editar Orçamento' : 'Novo Orçamento'}</DialogTitle></DialogHeader>
@@ -333,7 +362,14 @@ const Budgets = () => {
               </div>
               
               <div className="mt-8 border-t pt-6">
-                <h3 className="font-bold mb-4 text-slate-800">Itens do Orçamento</h3>
+                <h3 className="font-bold mb-4 text-slate-800 flex items-center justify-between">
+                  <span>Itens do Orçamento</span>
+                  {editingItemId && (
+                    <Badge variant="secondary" className="bg-amber-100 text-amber-700 border-amber-200">
+                      EDITANDO ITEM
+                    </Badge>
+                  )}
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-2 mb-4 items-end">
                   <div className="md:col-span-5 space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Descrição da Peça/Serviço</label>
@@ -377,20 +413,32 @@ const Budgets = () => {
                     </div>
                   </div>
                   <div className="md:col-span-1">
-                    <Button onClick={addItem} className="w-full bg-slate-800"><Plus size={18} /></Button>
+                    <Button onClick={addItem} className={cn("w-full", editingItemId ? "bg-amber-500 hover:bg-amber-600" : "bg-slate-800")}>
+                      {editingItemId ? <Save size={18} /> : <Plus size={18} />}
+                    </Button>
                   </div>
                 </div>
                 
                 <div className="space-y-1">
                   {formData.items?.map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg border text-sm">
+                    <div key={item.id} className={cn(
+                      "flex items-center justify-between p-2 rounded-lg border text-sm transition-colors",
+                      editingItemId === item.id ? "bg-amber-50 border-amber-200" : "bg-slate-50 border-slate-200"
+                    )}>
                       <div className="flex-1 grid grid-cols-12 gap-2 items-center">
                         <span className="col-span-6 font-bold truncate">{item.description}</span>
                         <span className="col-span-2 text-slate-500 text-xs">{item.type}</span>
                         <span className="col-span-2 text-center">{item.quantity}x {formatCurrency(item.unitValue)}</span>
                         <span className="col-span-2 text-right font-black text-blue-700">{formatCurrency(item.quantity * item.unitValue)}</span>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)} className="text-red-500 ml-2 h-8 w-8"><Trash2 size={14} /></Button>
+                      <div className="flex items-center gap-1 ml-2">
+                        <Button variant="ghost" size="icon" onClick={() => editItem(item)} className="text-blue-600 h-8 w-8">
+                          <Edit2 size={14} />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)} className="text-red-500 h-8 w-8">
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
