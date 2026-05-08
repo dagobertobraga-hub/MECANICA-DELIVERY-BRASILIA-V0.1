@@ -48,6 +48,7 @@ export interface Budget {
   items: BudgetItem[];
   professionalId?: string;
   commissionValue?: number;
+  date: string; // Data do orçamento
   createdAt: string;
   updatedAt: string;
 }

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, Check, ChevronsUpDown, FilterX, User, Activity } from 'lucide-react';
+import { Plus, Search, FileDown, MessageSquare, Edit2, Trash2, Check, ChevronsUpDown, FilterX, User, Activity, Calendar } from 'lucide-react';
 import { Budget, BudgetItem, BudgetStatus, Vehicle } from '@/lib/types';
 import { formatCurrency, toUpperCase, formatPlate, maskPhone, maskCurrency, parseCurrencyToNumber } from '@/lib/utils-format';
 import { generateBudgetPDF } from '@/lib/pdf-generator';
@@ -35,7 +35,8 @@ const Budgets = () => {
     km: 0, 
     status: 'Aberto', 
     items: [], 
-    professionalId: ''
+    professionalId: '',
+    date: new Date().toISOString().split('T')[0]
   };
 
   const [formData, setFormData] = useState<Partial<Budget>>(initialFormData);
@@ -88,7 +89,13 @@ const Budgets = () => {
     const prof = professionals.find(p => p.id === formData.professionalId);
     const commission = prof ? (totals.services * (prof.commissionRate / 100)) : 0;
 
-    const budgetData = { ...formData, vehiclePlate: cleanPlate, commissionValue: commission, updatedAt: new Date().toISOString() };
+    const budgetData = { 
+      ...formData, 
+      vehiclePlate: cleanPlate, 
+      commissionValue: commission, 
+      updatedAt: new Date().toISOString(),
+      date: formData.date || new Date().toISOString().split('T')[0]
+    };
 
     if (editingBudget) {
       setBudgets(budgets.map(b => b.id === editingBudget.id ? { ...editingBudget, ...budgetData } as Budget : b));
@@ -104,6 +111,7 @@ const Budgets = () => {
         items: formData.items || [],
         professionalId: formData.professionalId,
         commissionValue: commission,
+        date: formData.date || new Date().toISOString().split('T')[0],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -239,6 +247,10 @@ const Budgets = () => {
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Data do Orçamento</label>
+                  <Input type="date" value={formData.date} onChange={e => setFormData(prev => ({...prev, date: e.target.value}))} />
+                </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Nome do Cliente</label>
                   <Input value={formData.clientName} onChange={e => setFormData(prev => ({...prev, clientName: toUpperCase(e.target.value)}))} placeholder="NOME COMPLETO" />
@@ -408,7 +420,13 @@ const Budgets = () => {
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row justify-between gap-4">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2"><span className="text-xs font-bold text-slate-400">#{budget.number}</span><Badge className={getStatusColor(budget.status)}>{budget.status}</Badge></div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-400">#{budget.number}</span>
+                    <Badge className={getStatusColor(budget.status)}>{budget.status}</Badge>
+                    <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                      <Calendar size={10} /> {new Date(budget.date).toLocaleDateString('pt-BR')}
+                    </span>
+                  </div>
                   <h3 className="text-lg font-bold">{budget.clientName}</h3>
                   <p className="text-sm text-slate-500">{budget.vehiclePlate} • {budget.km} KM</p>
                 </div>

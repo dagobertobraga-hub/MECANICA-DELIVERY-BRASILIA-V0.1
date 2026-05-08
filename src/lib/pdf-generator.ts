@@ -31,7 +31,7 @@ export const generateBudgetPDF = (budget: Budget) => {
   doc.text(`VEÍCULO (PLACA): ${budget.vehiclePlate.toUpperCase()}`, 10, 62);
   doc.text(`KM ATUAL: ${budget.km}`, 140, 62);
   doc.text(`PRESTADOR: ${storeInfo.provider}`, 10, 69);
-  doc.text(`DATA: ${new Date(budget.createdAt).toLocaleDateString('pt-BR')}`, 140, 48);
+  doc.text(`DATA: ${new Date(budget.date).toLocaleDateString('pt-BR')}`, 140, 48);
 
   const parts = budget.items.filter(i => i.type === 'Peça');
   const services = budget.items.filter(i => i.type === 'Serviço');
